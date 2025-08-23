@@ -1,0 +1,11 @@
+Flask==2.3.3
+Flask-SocketIO==5.3.6
+simpy==4.0.1
+numpy==1.26.4
+networkx==3.1
+scikit-learn==1.4.2   # ✅ 1.4.2+ has wheels for Python 3.12
+matplotlib==3.8.4     # ✅ supports Python 3.12
+pandas==2.2.2         # ✅ supports Python 3.12
+python-socketio==5.11.3   # latest stable
+python-engineio==4.9.1    # latest stable
+eventlet==0.36.1      # ✅ Python 3.12 compatible

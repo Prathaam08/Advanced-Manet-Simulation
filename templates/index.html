@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart MANET Protocol Analyzer</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="main-container">
+            <div class="row g-0">
+                <!-- Smart Control Panel -->
+                <div class="col-lg-4">
+                    <div class="control-panel h-100">
+                        <h2 class="mb-4">
+                            <i class="fas fa-brain me-2"></i>Smart Protocol Analyzer
+                        </h2>
+                        
+                        <!-- Auto-Testing Mode -->
+                        <div class="mb-4">
+                            <h4><i class="fas fa-magic me-2"></i>Intelligent Testing</h4>
+                            <p class="small mb-3">Let AI find the best protocol automatically across random network scenarios</p>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Number of Test Scenarios</label>
+                                <select id="numScenarios" class="form-select">
+                                    <option value="3">3 Scenarios (Fast)</option>
+                                    <option value="5" selected>5 Scenarios (Recommended)</option>
+                                    <option value="8">8 Scenarios (Comprehensive)</option>
+                                    <option value="10">10 Scenarios (Thorough)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="d-grid gap-2">
+                                <button id="btnStartAutoTest" class="btn btn-smart btn-lg">
+                                    <i class="fas fa-play me-2"></i>Find Best Protocol
+                                </button>
+                                <button id="btnStopAutoTest" class="btn btn-outline-light" disabled>
+                                    <i class="fas fa-stop me-2"></i>Stop Testing
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <hr class="my-4" style="border-color: rgba(255,255,255,0.3);">
+                        
+                        <!-- Manual Mode Toggle -->
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="manualMode">
+                                <label class="form-check-label" for="manualMode">
+                                    <i class="fas fa-cog me-1"></i>Manual Parameter Control
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Manual Controls (Hidden by default) -->
+                        <div id="manualControls" style="display: none;">
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <label class="form-label">Protocol</label>
+                                    <select id="protocol" class="form-select">
+                                        <option value="AODV">AODV</option>
+                                        <option value="DSDV">DSDV</option>
+                                        <option value="DSR">DSR</option>
+                                        <option value="OLSR">OLSR</option>
+                                    </select>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label">Nodes</label>
+                                    <input type="number" id="numNodes" class="form-control" value="30" min="10" max="100">
+                                </div>
+                            </div>
+                            
+                            <div class="row g-2 mt-2">
+                                <div class="col-6">
+                                    <label class="form-label">Speed (m/s)</label>
+                                    <input type="number" id="nodeSpeed" class="form-control" value="5" min="1" max="30">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label">TX Range (m)</label>
+                                    <input type="number" id="txRange" class="form-control" value="150" min="50" max="300">
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid gap-2 mt-3">
+                                <button id="btnStartManual" class="btn btn-outline-light">
+                                    <i class="fas fa-play me-1"></i>Start Manual Test
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Current Status -->
+                        <div id="currentStatus" class="mt-4">
+                            <div class="test-status">
+                                <h5><i class="fas fa-info-circle me-2"></i>Status</h5>
+                                <div id="statusText">Ready to find the best protocol for you!</div>
+                                <div id="progressContainer" style="display: none;">
+                                    <div class="progress mt-2">
+                                        <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%"></div>
+                                    </div>
+                                    <small id="progressText" class="text-muted"></small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Current Scenarios Info -->
+                        <div id="scenariosInfo" style="display: none;">
+                            <h5><i class="fas fa-network-wired me-2"></i>Testing Scenarios</h5>
+                            <div id="scenariosList" class="small"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Results Area -->
+                <div class="col-lg-8 p-4">
+                    
+                    <!-- Winner Banner -->
+                    <div id="winnerBanner" class="winner-banner" style="display: none;">
+                        <h2><i class="fas fa-trophy me-2"></i>Best Protocol Found!</h2>
+                        <div id="winnerDetails"></div>
+                    </div>
+                    
+                    <!-- Protocol Rankings -->
+                    <div id="protocolRankings" class="row g-3 mb-4" style="display: none;">
+                        <div class="col-12">
+                            <h4><i class="fas fa-medal me-2"></i>Protocol Performance Rankings</h4>
+                        </div>
+                        <div id="rankingCards" class="col-12">
+                            <!-- Dynamic ranking cards will be inserted here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Network Visualization -->
+                    <div class="card shadow-sm mb-3">
+                        <div class="card-header fw-bold">
+                            <i class="fas fa-project-diagram me-2"></i>Network Topology
+                            <span id="currentTest" class="badge bg-info ms-2" style="display: none;"></span>
+                        </div>
+                        <div class="card-body p-0">
+                            <div id="network-canvas" class="network-canvas"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Metrics Charts -->
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="card shadow-sm">
+                                <div class="card-header">Packet Delivery Ratio</div>
+                                <div class="card-body chart-card">
+                                    <canvas id="pdrChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card shadow-sm">
+                                <div class="card-header">End-to-End Delay (ms)</div>
+                                <div class="card-body chart-card">
+                                    <canvas id="delayChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row g-3 mt-1">
+                        <div class="col-md-6">
+                            <div class="card shadow-sm">
+                                <div class="card-header">Throughput (kbps)</div>
+                                <div class="card-body chart-card">
+                                    <canvas id="throughputChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card shadow-sm">
+                                <div class="card-header">Energy Consumption</div>
+                                <div class="card-body chart-card">
+                                    <canvas id="energyChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Test Results Table -->
+                    <div id="resultsTable" class="card shadow-sm mt-3" style="display: none;">
+                        <div class="card-header">
+                            <i class="fas fa-table me-2"></i>Detailed Test Results
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table id="testResultsTable" class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Protocol</th>
+                                            <th>Scenario</th>
+                                            <th>PDR</th>
+                                            <th>Delay (ms)</th>
+                                            <th>Throughput</th>
+                                            <th>Energy</th>
+                                            <th>Score</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="testResultsBody">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
