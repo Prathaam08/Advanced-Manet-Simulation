@@ -125,4 +125,4 @@ INSTALLATION & SETUP
    3. OLSR    - 74.6 (PDR: 86%, Delay: 48ms, Throughput: 31kbps)
    4. DSR     - 68.2 (PDR: 78%, Delay: 67ms, Throughput: 22kbps)
 
-This gives users the "best protocol" recommendation WITHOUT requiring them to understand or configure network parameters - exactly what your teacher requested! 🎯
+This gives users the "best protocol" recommendation WITHOUT requiring them to understand or configure network parameters.
