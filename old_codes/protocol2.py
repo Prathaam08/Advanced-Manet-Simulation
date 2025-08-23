@@ -1,5 +1,6 @@
 # File: simulation_engine/protocols.py
 
+
 import simpy
 from collections import defaultdict, deque
 from . import config
@@ -89,7 +90,7 @@ class AODV(BaseRouting):
         self.env.process(self._periodic_neighbor_update())
 
     def _periodic_neighbor_update(self):
-        while not config.get_stop_simulation():
+        while not config.stop_simulation:
             self.update_neighbors()
             yield self.env.timeout(1.0)
 
@@ -203,12 +204,12 @@ class DSDV(BaseRouting):
         self.env.process(self._periodic_neighbor_update())
 
     def _periodic_neighbor_update(self):
-        while not config.get_stop_simulation():
+        while not config.stop_simulation:
             self.update_neighbors()
             yield self.env.timeout(2.0)
 
     def _periodic_update(self):
-        while not config.get_stop_simulation():
+        while not config.stop_simulation:
             for node in self.nodes:
                 for neighbor in node.neighbors:
                     self.routing_overhead += len(self.route_tables[node.id])
@@ -229,12 +230,6 @@ class DSDV(BaseRouting):
             return True
         return False
 
-    def try_send(self, src_node, packet):
-        if self._route_packet(src_node, packet):
-            self.send_packet(packet)
-            return True
-        return False
-
 
 class DSR(BaseRouting):
     def __init__(self, env, nodes, graph):
@@ -243,7 +238,7 @@ class DSR(BaseRouting):
         self.env.process(self._periodic_neighbor_update())
 
     def _periodic_neighbor_update(self):
-        while not config.get_stop_simulation():
+        while not config.stop_simulation:
             self.update_neighbors()
             yield self.env.timeout(1.0)
 
@@ -259,159 +254,26 @@ class DSR(BaseRouting):
                     return True
         return False
 
-    def try_send(self, src_node, packet):
-        if self._route_packet(src_node, packet):
-            self.send_packet(packet)
-            return True
-        # For simplicity, create a direct route for DSR
-        self._create_dummy_route(src_node, packet)
-        return False
-
-    def _create_dummy_route(self, src_node, packet):
-        """Create a simple route for DSR (simplified implementation)"""
-        # Find shortest path through neighbors
-        visited = set()
-        queue = [(src_node.id, [src_node.id])]
-        
-        while queue:
-            current_id, path = queue.pop(0)
-            current_node = self.node_map.get(current_id)
-            
-            if not current_node or current_id in visited:
-                continue
-                
-            visited.add(current_id)
-            
-            if current_id == packet.dst_id:
-                # Found route, cache it
-                key = (packet.src_id, packet.dst_id)
-                self.route_cache[key] = path
-                
-                # Set up routing table entries
-                for i in range(len(path) - 1):
-                    node_id = path[i]
-                    next_hop = path[i + 1]
-                    node_obj = self.node_map.get(node_id)
-                    if node_obj:
-                        node_obj.routing_table[packet.dst_id] = next_hop
-                
-                self.routing_overhead += len(path)
-                self.send_packet(packet)
-                return
-            
-            # Add neighbors to queue
-            for neighbor in current_node.neighbors:
-                if neighbor.id not in visited:
-                    new_path = path + [neighbor.id]
-                    queue.append((neighbor.id, new_path))
-
 
 class OLSR(BaseRouting):
     def __init__(self, env, nodes, graph):
         super().__init__(env, nodes, graph)
         self.mpr_selectors = {}
-        self.topology_table = {}
         self.env.process(self._periodic_neighbor_update())
         self.env.process(self._mpr_selection())
-        self.env.process(self._topology_control())
 
     def _periodic_neighbor_update(self):
-        while not config.get_stop_simulation():
+        while not config.stop_simulation:
             self.update_neighbors()
             yield self.env.timeout(1.0)
 
     def _mpr_selection(self):
-        while not config.get_stop_simulation():
+        while not config.stop_simulation:
             for node in self.nodes:
-                # Simple MPR selection: select all neighbors
                 node.mprs = [n.id for n in node.neighbors]
                 for mpr in node.mprs:
                     self.mpr_selectors.setdefault(mpr, set()).add(node.id)
-                    
-                # Update routing table based on MPRs
-                for neighbor in node.neighbors:
-                    self.route_tables.setdefault(node.id, {})
-                    self.route_tables[node.id][neighbor.id] = {'next_hop': neighbor.id, 'metric': 1}
-                    node.routing_table[neighbor.id] = neighbor.id
-                    
             yield self.env.timeout(10.0)
-
-    def _topology_control(self):
-        while not config.get_stop_simulation():
-            # Simplified topology control
-            for node in self.nodes:
-                if hasattr(node, 'mprs'):
-                    for mpr_id in node.mprs:
-                        mpr_node = self.node_map.get(mpr_id)
-                        if mpr_node:
-                            # Broadcast topology information
-                            self.routing_overhead += 1
-                            
-                            # Update topology table
-                            self.topology_table.setdefault(node.id, {})
-                            self.topology_table[node.id][mpr_id] = {
-                                'last_seen': self.env.now,
-                                'metric': 1
-                            }
-            
-            # Calculate shortest paths using topology information
-            self._calculate_routing_table()
-            yield self.env.timeout(15.0)
-
-    def _calculate_routing_table(self):
-        """Calculate routing table using Dijkstra's algorithm on topology table"""
-        for src_node in self.nodes:
-            # Initialize distances
-            distances = {node.id: float('inf') for node in self.nodes}
-            distances[src_node.id] = 0
-            previous = {}
-            unvisited = {node.id for node in self.nodes}
-            
-            while unvisited:
-                # Find node with minimum distance
-                current = min(unvisited, key=lambda x: distances[x])
-                if distances[current] == float('inf'):
-                    break
-                    
-                unvisited.remove(current)
-                
-                # Check direct neighbors
-                current_node = self.node_map.get(current)
-                if current_node:
-                    for neighbor in current_node.neighbors:
-                        if neighbor.id in unvisited:
-                            alt = distances[current] + 1
-                            if alt < distances[neighbor.id]:
-                                distances[neighbor.id] = alt
-                                previous[neighbor.id] = current
-                
-                # Check topology table entries
-                topology_info = self.topology_table.get(current, {})
-                for dest, info in topology_info.items():
-                    if dest in unvisited:
-                        alt = distances[current] + info['metric']
-                        if alt < distances[dest]:
-                            distances[dest] = alt
-                            previous[dest] = current
-            
-            # Build routing table entries
-            for dest_node in self.nodes:
-                if dest_node.id != src_node.id and dest_node.id in previous:
-                    # Find next hop
-                    path = []
-                    current = dest_node.id
-                    while current in previous:
-                        path.append(current)
-                        current = previous[current]
-                    
-                    if len(path) > 0:
-                        next_hop = path[-1] if len(path) == 1 else path[-2]
-                        self.route_tables.setdefault(src_node.id, {})
-                        self.route_tables[src_node.id][dest_node.id] = {
-                            'next_hop': next_hop, 
-                            'metric': distances[dest_node.id]
-                        }
-                        src_node.routing_table[dest_node.id] = next_hop
 
     def _route_packet(self, node, packet):
         entry = self.route_tables.get(node.id, {}).get(packet.dst_id)
@@ -421,11 +283,5 @@ class OLSR(BaseRouting):
             next_hop_id = entry
         if next_hop_id is not None:
             node.routing_table[packet.dst_id] = next_hop_id
-            return True
-        return False
-
-    def try_send(self, src_node, packet):
-        if self._route_packet(src_node, packet):
-            self.send_packet(packet)
             return True
         return False

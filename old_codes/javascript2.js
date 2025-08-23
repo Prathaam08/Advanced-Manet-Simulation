@@ -155,7 +155,7 @@ function stopAutoTesting() {
     .then(res => res.json())
     .then(data => {
         console.log("Stopping auto-testing...");
-        updateStatus("Stopping tests...", "running");
+        updateStatus("Stopped", "running");
     });
 }
 
