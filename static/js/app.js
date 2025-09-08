@@ -108,6 +108,77 @@ function setupSocketListeners() {
     socket.on("sim_error", handleSimulationError);
 }
 
+// function startAutoTesting() {
+//     if (testingActive) return;
+    
+//     const numScenarios = parseInt(document.getElementById("numScenarios").value);
+    
+//     testingActive = true;
+//     testResults = [];
+    
+//     // Update UI
+//     document.getElementById("btnStartAutoTest").disabled = true;
+//     document.getElementById("btnStopAutoTest").disabled = false;
+//     updateStatus("Starting intelligent protocol testing...", "running");
+    
+//     // Hide previous results
+//     hideResults();
+    
+//     // Clear charts
+//     clearAllCharts();
+    
+//     fetch("/start_auto_testing", {
+//         method: "POST",
+//         headers: { "Content-Type": "application/json" },
+//         body: JSON.stringify({ num_scenarios: numScenarios })
+//     })
+//     .then(res => res.json())
+//     .then(data => {
+//         if (data.status === "started") {
+//             console.log("Auto-testing started successfully");
+//         } else {
+//             throw new Error(data.error || "Failed to start testing");
+//         }
+//     })
+//     .catch(err => {
+//         console.error("Error starting auto-testing:", err);
+//         alert("Error starting testing: " + err.message);
+//         resetTestingUI();
+//     });
+// }
+
+// Add to your setupSocketListeners function
+function setupSocketListeners() {
+    const socket = io();
+    
+    // Socket.IO listeners for real-time updates
+    socket.on('simulation_progress', function(data) {
+        console.log('Simulation progress:', data);
+        updateProgress(data.progress, data.current_test);
+        document.getElementById('scenarios_completed').textContent = data.scenarios_completed;
+        document.getElementById('protocols_tested').textContent = data.protocols_tested;
+        
+        if (data.completed) {
+            completeSimulation();
+        }
+    });
+    
+    socket.on('simulation_error', function(error) {
+        console.error('Simulation error:', error);
+        alert('Simulation error: ' + error.error);
+        stopTest();
+    });
+    
+    socket.on('connect', function() {
+        console.log('Connected to server');
+    });
+    
+    socket.on('disconnect', function() {
+        console.log('Disconnected from server');
+    });
+}
+
+// Update your startAutoTest function to use real API
 function startAutoTesting() {
     if (testingActive) return;
     
@@ -127,10 +198,13 @@ function startAutoTesting() {
     // Clear charts
     clearAllCharts();
     
-    fetch("/start_auto_testing", {
+    // Get configuration from UI
+    const config = getTestConfiguration();
+    
+    fetch("/api/start_simulation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ num_scenarios: numScenarios })
+        body: JSON.stringify(config)
     })
     .then(res => res.json())
     .then(data => {
@@ -146,6 +220,36 @@ function startAutoTesting() {
         resetTestingUI();
     });
 }
+
+// Add this function to get configuration from UI
+function getTestConfiguration() {
+    return {
+        num_nodes: parseInt(document.getElementById('num_nodes').value),
+        area_width: parseInt(document.getElementById('area_width').value),
+        area_height: parseInt(document.getElementById('area_height').value),
+        transmission_range: parseInt(document.getElementById('transmission_range').value),
+        num_scenarios: parseInt(document.getElementById('num_scenarios').value),
+        simulation_time: parseInt(document.getElementById('simulation_time').value),
+        mobility_model: document.getElementById('mobility_model').value,
+        packet_rate: parseFloat(document.getElementById('packet_rate').value),
+        protocols: getSelectedProtocols(),
+        enable_route_selection: document.getElementById('enable_route_selection').checked,
+        source_node: document.getElementById('enable_route_selection').checked ? 
+                     parseInt(document.getElementById('source_node').value) : null,
+        destination_node: document.getElementById('enable_route_selection').checked ? 
+                         parseInt(document.getElementById('destination_node').value) : null
+    };
+}
+
+function getSelectedProtocols() {
+    const protocols = [];
+    if (document.getElementById('aodv').checked) protocols.push('AODV');
+    if (document.getElementById('dsdv').checked) protocols.push('DSDV');
+    if (document.getElementById('dsr').checked) protocols.push('DSR');
+    if (document.getElementById('olsr').checked) protocols.push('OLSR');
+    return protocols;
+}
+
 
 function stopAutoTesting() {
     fetch("/stop_auto_testing", {

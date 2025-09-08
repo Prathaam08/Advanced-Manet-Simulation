@@ -23,6 +23,10 @@ def get_stop_simulation() -> bool:
     """Get the current stop simulation status"""
     return stop_simulation_flag.is_set()
 
+def get_stop():
+    """Alias for get_stop_simulation for backward compatibility"""
+    return get_stop_simulation()
+
 # Simulation configuration parameters
 DEFAULT_SIMULATION_CONFIG = {
     'num_nodes': 20,

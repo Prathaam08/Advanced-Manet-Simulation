@@ -1,6 +1,5 @@
 # File: simulation_engine/auto_protocol_tester.py
 
-
 import random
 import numpy as np
 from .simulator import MANETSimulator
@@ -56,7 +55,7 @@ class AutoProtocolTester:
         for i in range(num_scenarios):
             scenario = NetworkScenario(
                 num_nodes=random.randint(20, 80),
-                area_size=(random.randint(800, 1500), random.randint(800, 1500)),
+                area_size=(random.randint(500, 1500), random.randint(500, 1500)),
                 node_speed=random.uniform(2, 25),
                 pause_time=random.uniform(1, 10),
                 tx_range=random.randint(100, 250),
@@ -110,7 +109,7 @@ class AutoProtocolTester:
         final_result = None
         
         for event in simulator.run():
-            if config.get_stop():
+            if config.get_stop_simulation():
                 return None
                 
             if isinstance(event, dict):

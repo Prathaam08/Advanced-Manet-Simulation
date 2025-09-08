@@ -226,6 +226,7 @@ def update_simulation_progress(progress_data):
     """Update global simulation progress"""
     global simulation_progress
     simulation_progress.update(progress_data)
+    socketio.emit('simulation_progress', progress_data)
     print(f"Progress Update: {progress_data['progress']}% - {progress_data['current_test']}")
 
 def run_simulation_thread(config):
@@ -253,6 +254,7 @@ def run_simulation_thread(config):
         print(f"Simulation thread error: {e}")
         simulation_progress['completed'] = True
         simulation_progress['current_test'] = f'Error: {str(e)}'
+        socketio.emit('simulation_error', {'error': str(e)})
     finally:
         current_simulation = None
         start_simulation_flag.clear()
@@ -444,9 +446,5 @@ if __name__ == '__main__':
     os.makedirs('data/simulations', exist_ok=True)
     os.makedirs('data/test_results', exist_ok=True)
     
-    from flask_socketio import SocketIO
-
-    socketio = SocketIO(app)
-
     if __name__ == '__main__':
         socketio.run(app, debug=True, host='0.0.0.0', port=5000)

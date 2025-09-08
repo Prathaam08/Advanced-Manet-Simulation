@@ -1,6 +1,4 @@
 #  File: simulation_engine/manet_models.py
-
-
 import math
 import numpy as np
 import random
