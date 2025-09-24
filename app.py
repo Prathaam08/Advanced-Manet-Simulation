@@ -47,6 +47,13 @@ class EnhancedAutoProtocolTester(AutoProtocolTester):
         print(f"Protocols: {protocols}")
         print(f"Scenarios: {num_scenarios}")
         print(f"Route Selection: {enable_route_selection}")
+        print(f"Source Node: {source_node}")
+        print(f"Destination Node: {destination_node}")
+        print(f"Total tests to run: {total_tests}")
+        
+        # Initialize results list
+        self.results = []
+        
         if enable_route_selection:
             print(f"Fixed Route: Node {source_node} → Node {destination_node}")
         
@@ -120,11 +127,15 @@ class EnhancedAutoProtocolTester(AutoProtocolTester):
     def run_single_test(self, protocol, scenario, route_config):
         """Run a single test scenario"""
         try:
+            print(f"Starting run_single_test for {protocol}, scenario {scenario}")
+            print(f"Route config: {route_config}")
+            
             # Import your simulation modules
             from simulation_engine.simulator import MANETSimulator
             from simulation_engine.manet_models import Node
             
             # Create simulator with configuration
+            print(f"Creating simulator with: nodes={self.config['num_nodes']}, area={self.config['area_width']}x{self.config['area_height']}, range={self.config['transmission_range']}, time={self.config['simulation_time']}, model={self.config['mobility_model']}")
             simulator = MANETSimulator(
                 num_nodes=self.config['num_nodes'],
                 area_width=self.config['area_width'],
@@ -137,16 +148,22 @@ class EnhancedAutoProtocolTester(AutoProtocolTester):
             # Configure specific source and destination
             source_node_id = route_config['source_node']
             dest_node_id = route_config['destination_node']
+            print(f"Source node: {source_node_id}, Destination node: {dest_node_id}")
             
             # Run simulation with specific protocol
+            packet_rate = self.config.get('packet_rate', 1.0)
+            print(f"Running simulation with protocol={protocol}, packet_rate={packet_rate}")
             metrics = simulator.run_simulation(
                 protocol=protocol,
                 source_node=source_node_id,
                 destination_node=dest_node_id,
-                packet_rate=self.config.get('packet_rate', 1.0)
+                packet_rate=packet_rate
             )
+            print(f"Simulation completed with metrics: {metrics}")
+            
             
             # Create result object
+            print("Creating result object")
             result = {
                 'protocol': protocol,
                 'scenario': scenario,
@@ -170,12 +187,17 @@ class EnhancedAutoProtocolTester(AutoProtocolTester):
                 }
             }
             
+            print(f"Returning result: {result}")
             return result
             
         except Exception as e:
             print(f"Error in simulation: {e}")
+            import traceback
+            traceback.print_exc()
             # Return dummy data for demo purposes
-            return self.generate_dummy_result(protocol, scenario, route_config)
+            dummy_result = self.generate_dummy_result(protocol, scenario, route_config)
+            print(f"Returning dummy result: {dummy_result}")
+            return dummy_result
     
     def generate_dummy_result(self, protocol, scenario, route_config):
         """Generate dummy results for testing UI"""
@@ -235,23 +257,33 @@ def run_simulation_thread(config):
     
     try:
         print("Starting simulation thread...")
+        print(f"Configuration: {config}")
         start_simulation_flag.set()
         stop_simulation_flag.clear()
         
         # Create enhanced tester with socketio
         tester = EnhancedAutoProtocolTester(config, socketio)   # ✅ pass socketio
+        print("Created EnhancedAutoProtocolTester")
         
         # Run comprehensive test
+        print("Starting run_comprehensive_test...")
         results = tester.run_comprehensive_test(progress_callback=update_simulation_progress)
+        print(f"run_comprehensive_test returned {len(results) if results else 'None'} results")
         
         simulation_results = results
-        print(f"Simulation completed with {len(results)} results")
+        print(f"Simulation completed with {len(results) if results else 0} results")
         
         # Save results to file
-        save_results_to_file(results, config)
+        if results and len(results) > 0:
+            print("Calling save_results_to_file...")
+            save_results_to_file(results, config)
+        else:
+            print("No results to save!")
         
     except Exception as e:
         print(f"Simulation thread error: {e}")
+        import traceback
+        traceback.print_exc()
         simulation_progress['completed'] = True
         simulation_progress['current_test'] = f'Error: {str(e)}'
         socketio.emit('simulation_error', {'error': str(e)})
@@ -267,6 +299,10 @@ def save_results_to_file(results, config):
         
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         filename = f'data/test_results/manet_test_{timestamp}.json'
+        
+        print(f"Preparing to save results to {filename}")
+        print(f"Results count: {len(results)}")
+        print(f"Config: {config}")
         
         data = {
             'test_configuration': config,
@@ -284,11 +320,17 @@ def save_results_to_file(results, config):
         
     except Exception as e:
         print(f"Error saving results: {e}")
+        import traceback
+        traceback.print_exc()
 
 @app.route('/')
 def index():
     """Main dashboard page"""
     return render_template('index.html')
+
+@app.route('/modern')
+def modern_index():
+    return render_template('modern_index.html')
 
 @app.route('/api/start_simulation', methods=['POST'])
 def start_simulation():
@@ -300,9 +342,11 @@ def start_simulation():
             return jsonify({'error': 'Simulation already running'}), 400
         
         config = request.json
+        print(f"Received simulation request with config: {config}")
         
         # Validate configuration
         if not validate_config(config):
+            print("Invalid configuration")
             return jsonify({'error': 'Invalid configuration'}), 400
         
         # Reset progress
@@ -315,8 +359,10 @@ def start_simulation():
             'results': []
         }
         simulation_results = []
+        print("Reset simulation progress and results")
         
         # Start simulation in separate thread
+        print("Starting simulation thread")
         current_simulation = threading.Thread(target=run_simulation_thread, args=(config,))
         current_simulation.start()
         

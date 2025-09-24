@@ -106,57 +106,20 @@ function setupSocketListeners() {
     socket.on("sim_complete", handleSimulationComplete);
     socket.on("sim_stopped", handleSimulationStopped);
     socket.on("sim_error", handleSimulationError);
-}
-
-// function startAutoTesting() {
-//     if (testingActive) return;
-    
-//     const numScenarios = parseInt(document.getElementById("numScenarios").value);
-    
-//     testingActive = true;
-//     testResults = [];
-    
-//     // Update UI
-//     document.getElementById("btnStartAutoTest").disabled = true;
-//     document.getElementById("btnStopAutoTest").disabled = false;
-//     updateStatus("Starting intelligent protocol testing...", "running");
-    
-//     // Hide previous results
-//     hideResults();
-    
-//     // Clear charts
-//     clearAllCharts();
-    
-//     fetch("/start_auto_testing", {
-//         method: "POST",
-//         headers: { "Content-Type": "application/json" },
-//         body: JSON.stringify({ num_scenarios: numScenarios })
-//     })
-//     .then(res => res.json())
-//     .then(data => {
-//         if (data.status === "started") {
-//             console.log("Auto-testing started successfully");
-//         } else {
-//             throw new Error(data.error || "Failed to start testing");
-//         }
-//     })
-//     .catch(err => {
-//         console.error("Error starting auto-testing:", err);
-//         alert("Error starting testing: " + err.message);
-//         resetTestingUI();
-//     });
-// }
-
-// Add to your setupSocketListeners function
-function setupSocketListeners() {
-    const socket = io();
     
     // Socket.IO listeners for real-time updates
     socket.on('simulation_progress', function(data) {
         console.log('Simulation progress:', data);
         updateProgress(data.progress, data.current_test);
-        document.getElementById('scenarios_completed').textContent = data.scenarios_completed;
-        document.getElementById('protocols_tested').textContent = data.protocols_tested;
+        
+        // Update UI elements if they exist
+        if (document.getElementById('scenarios_completed')) {
+            document.getElementById('scenarios_completed').textContent = data.scenarios_completed;
+        }
+        
+        if (document.getElementById('protocols_tested')) {
+            document.getElementById('protocols_tested').textContent = data.protocols_tested;
+        }
         
         if (data.completed) {
             completeSimulation();
@@ -177,6 +140,8 @@ function setupSocketListeners() {
         console.log('Disconnected from server');
     });
 }
+
+// Socket listeners are now consolidated in the setupSocketListeners function above
 
 // Update your startAutoTest function to use real API
 function startAutoTesting() {
