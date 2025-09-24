@@ -328,10 +328,6 @@ def index():
     """Main dashboard page"""
     return render_template('index.html')
 
-@app.route('/modern')
-def modern_index():
-    return render_template('modern_index.html')
-
 @app.route('/api/start_simulation', methods=['POST'])
 def start_simulation():
     """Start a new simulation"""
