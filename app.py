@@ -487,6 +487,5 @@ if __name__ == '__main__':
     # Create necessary directories
     os.makedirs('data/simulations', exist_ok=True)
     os.makedirs('data/test_results', exist_ok=True)
-    
-    if __name__ == '__main__':
-        socketio.run(app, debug=True, host='0.0.0.0', port=5000)
+
+    socketio.run(app, debug=True, host='0.0.0.0', port=5000)

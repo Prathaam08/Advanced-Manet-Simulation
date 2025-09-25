@@ -5,6 +5,7 @@ let charts = {};
 let testingActive = false;
 let testResults = [];
 let currentRunId = null;
+let currentRouteInfo = { source: null, destination: null };
 
 document.addEventListener("DOMContentLoaded", function () {
     initializeCharts();
@@ -108,23 +109,31 @@ function setupSocketListeners() {
     socket.on("sim_error", handleSimulationError);
     
     // Socket.IO listeners for real-time updates
-    socket.on('simulation_progress', function(data) {
-        console.log('Simulation progress:', data);
-        updateProgress(data.progress, data.current_test);
-        
-        // Update UI elements if they exist
-        if (document.getElementById('scenarios_completed')) {
-            document.getElementById('scenarios_completed').textContent = data.scenarios_completed;
+socket.on('simulation_progress', function(data) {
+    console.log('Simulation progress:', data);
+    updateProgress(data.progress, data.current_test);
+    
+    // Update UI elements
+    if (document.getElementById('scenarios_completed')) {
+        document.getElementById('scenarios_completed').textContent = data.scenarios_completed;
+    }
+    if (document.getElementById('protocols_tested')) {
+        document.getElementById('protocols_tested').textContent = data.protocols_tested;
+    }
+    // Check for new results and update the current route info
+    if (data.results && data.results.length > 0) {
+        const latestResult = data.results[data.results.length - 1];
+        if (latestResult.route_info) {
+            currentRouteInfo.source = latestResult.route_info.source_node;
+            currentRouteInfo.destination = latestResult.route_info.destination_node;
         }
-        
-        if (document.getElementById('protocols_tested')) {
-            document.getElementById('protocols_tested').textContent = data.protocols_tested;
-        }
-        
-        if (data.completed) {
-            completeSimulation();
-        }
-    });
+    }
+    // ✨ --- END OF NEW CODE --- ✨
+
+    if (data.completed) {
+        completeSimulation(); // Assuming you have this function
+    }
+});
     
     socket.on('simulation_error', function(error) {
         console.error('Simulation error:', error);
@@ -486,10 +495,22 @@ function updateChart(chart, time, value) {
 }
 
 function updateNetworkVisualization(data) {
+    // This function seems to be designed for a different data structure.
+    // We will assume the data from 'simulation_progress' is what's used.
+    // A proper implementation would require aligning the data structures.
+    // For now, let's assume `nodes` and `links` are available somewhere.
+    
+    // NOTE: This part is a placeholder, as your D3 code expects a different
+    // data format than what `simulation_progress` provides. 
+    // You will need to adapt this to your actual simulation output.
+    
+    // For the coloring logic, we will modify the .attr("fill", ...) line.
+    // Let's assume you have a `nodes` array that D3 is using.
+
     const container = document.getElementById("network-canvas");
     const width = container.clientWidth;
     const height = container.clientHeight;
-    
+
     const svg = d3.select("#network-canvas")
         .selectAll("svg")
         .data([null])
@@ -497,14 +518,12 @@ function updateNetworkVisualization(data) {
         .attr("width", width)
         .attr("height", height);
     
-    const xScale = d3.scaleLinear()
-        .domain([0, data.areaSize[0]])
-        .range([50, width - 50]);
-    
-    const yScale = d3.scaleLinear()
-        .domain([0, data.areaSize[1]])
-        .range([50, height - 50]);
-    
+    // Assume `data.nodes` and `data.links` exist for visualization
+    if (!data.nodes || !data.links) return; // Guard against missing data
+
+    const xScale = d3.scaleLinear().domain([0, data.areaSize[0]]).range([50, width - 50]);
+    const yScale = d3.scaleLinear().domain([0, data.areaSize[1]]).range([50, height - 50]);
+
     // Draw links
     svg.selectAll(".link")
         .data(data.links)
@@ -514,24 +533,35 @@ function updateNetworkVisualization(data) {
         .attr("y1", d => yScale(data.nodes.find(n => n.id === d.source).y))
         .attr("x2", d => xScale(data.nodes.find(n => n.id === d.target).x))
         .attr("y2", d => yScale(data.nodes.find(n => n.id === d.target).y));
-    
+
     // Draw nodes
     const node = svg.selectAll(".node")
         .data(data.nodes, d => d.id)
         .join("g")
         .attr("class", "node")
         .attr("transform", d => `translate(${xScale(d.x)},${yScale(d.y)})`);
-    
+
     node.selectAll("circle")
         .data(d => [d])
         .join("circle")
         .attr("class", "node-circle")
         .attr("r", 8)
-        .attr("fill", d => d.energy > 70 ? "#4CAF50" : 
-                         d.energy > 30 ? "#FFC107" : "#F44336")
+        // ✨ --- THIS IS THE MODIFIED LOGIC --- ✨
+        .attr("fill", d => {
+            if (d.id === currentRouteInfo.source) {
+                return "#0D6EFD"; // Blue for Source
+            } else if (d.id === currentRouteInfo.destination) {
+                return "#DC3545"; // Red for Destination
+            } else {
+                // Fallback to energy-based coloring for other nodes
+                return d.energy > 70 ? "#198754" :  // Green
+                       d.energy > 30 ? "#FFC107" :  // Yellow
+                                       "#6C757D";   // Grey
+            }
+        })
         .attr("stroke", "#333")
         .attr("stroke-width", 2);
-    
+
     node.selectAll("text")
         .data(d => [d])
         .join("text")

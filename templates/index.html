@@ -1,4 +1,3 @@
-<!-- this is working code with network topogy genrate -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -679,7 +678,7 @@
                     <div class="control-item">
                         <label for="mobility_model">Mobility Model</label>
                         <select id="mobility_model">
-                            <option value="random_walk">Random Walk</option>
+                            <!-- <option value="random_walk">Random Walk</option> -->
                             <option value="random_waypoint">Random Waypoint</option>
                             <option value="static">Static</option>
                         </select>
@@ -1086,7 +1085,7 @@
             for (let i = 0; i < numNodes; i++) {
                 const x = 20 + Math.random() * areaWidth;
                 const y = 20 + Math.random() * areaHeight;
-                
+            
                 nodes.push({
                     id: i + 1,
                     x: x,
@@ -1094,9 +1093,14 @@
                     radius: 15,
                     type: 'normal',
                     highlighted: false,
-                    connected: false
+                    connected: false,
+                    // Add for mobility:
+                    destX: 20 + Math.random() * areaWidth,
+                    destY: 20 + Math.random() * areaHeight,
+                    speed: 1 + Math.random() * 2 // 1-3 px/frame
                 });
             }
+
             
             // Set source and destination if specified
             if (testConfig.enable_route_selection && testConfig.source_node && testConfig.destination_node) {
@@ -1145,6 +1149,24 @@
             document.getElementById('canvas_info').textContent = 
                 `Nodes: ${numNodes}, Range: ${transmissionRange}m, Model: ${testConfig.mobility_model}`;
             document.getElementById('hover_info').textContent = 'Hover over a node to see connections';
+        }
+
+        function updateSourceDestinationUI(sourceId, destinationId) {
+            nodes.forEach(node => {
+                if (node.id === sourceId) {
+                    node.type = 'source';
+                } else if (node.id === destinationId) {
+                    node.type = 'destination';
+                } else {
+                    node.type = 'normal';
+                }
+            });
+
+            // Also update the UI text for the current route if it's random
+            if (!testConfig.enable_route_selection) {
+                document.getElementById('current_route').textContent = 
+                    `Node ${sourceId} → Node ${destinationId}`;
+            }
         }
 
         function animateNetwork() {
@@ -1232,13 +1254,22 @@
                 if (testConfig.mobility_model !== 'static') {
                     nodes.forEach(node => {
                         if (node.type === 'normal') {
-                            // Simple random movement
-                            node.x += (Math.random() - 0.5) * 2;
-                            node.y += (Math.random() - 0.5) * 2;
-                            
+                            // Move toward destination
+                            const dx = node.destX - node.x;
+                            const dy = node.destY - node.y;
+                            const dist = Math.sqrt(dx * dx + dy * dy);
+                            if (dist < node.speed) {
+                                // Arrived: pick new destination
+                                node.destX = 20 + Math.random() * (canvas.width - 40);
+                                node.destY = 20 + Math.random() * (canvas.height - 40);
+                                node.speed = 1 + Math.random() * 2;
+                            } else {
+                                node.x += (dx / dist) * node.speed;
+                                node.y += (dy / dist) * node.speed;
+                            }
                             // Keep within bounds
-                            node.x = Math.max(20, Math.min(canvas.width - 20, node.x));
-                            node.y = Math.max(20, Math.min(canvas.height - 20, node.y));
+                            node.x = Math.max(20, Math.min(canvas.             width - 20, node.x));
+                            node.y = Math.max(20, Math.min(canvas.             height - 20, node.y));
                         }
                     });
                 }
@@ -1338,7 +1369,7 @@
         }
 
         // Demo simulation for testing (replace with actual API calls)
-        function runDemoSimulation() {
+function runDemoSimulation() {
             let currentScenario = 0;
             let currentProtocol = 0;
             const protocols = testConfig.protocols;
@@ -1362,6 +1393,25 @@
                 document.getElementById('protocols_tested').textContent = protocols.length;
                 document.getElementById('scenarios_completed').textContent = 
                     Math.floor(completedTests / protocols.length);
+
+                // ✨ --- START OF NEW CODE --- ✨
+                // Update the UI for the new scenario when its first protocol starts
+                if (currentProtocol === 0) {
+                    if (!testConfig.enable_route_selection) {
+                        // Pick new random source/destination for each scenario
+                        const numNodes = testConfig.num_nodes;
+                        let src = Math.floor(Math.random() * numNodes) + 1;
+                        let dst = Math.floor(Math.random() * numNodes) + 1;
+                        while (dst === src) {
+                            dst = Math.floor(Math.random() * numNodes) + 1;
+                        }
+                        updateSourceDestinationUI(src, dst);
+                    } else {
+                        // Use the fixed source/destination for all scenarios
+                        updateSourceDestinationUI(testConfig.source_node, testConfig.destination_node);
+                    }
+                }
+                // ✨ --- END OF NEW CODE --- ✨
 
                 // Generate demo results
                 const result = generateDemoResult(protocols[currentProtocol], currentScenario);
