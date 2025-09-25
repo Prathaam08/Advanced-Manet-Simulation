@@ -15,20 +15,23 @@ The **MANET Protocol Auto-Tester** is a web-based simulation tool designed for s
   - 📦 Packet Delivery Ratio (PDR)  
   - ⏱️ Average End-to-End Delay  
   - 📊 Routing Overhead  
-- **Zero Installation**: Runs entirely in any modern web browser with no setup required.  
+- **Hybrid Architecture**:  
+  - **Python Backend (Flask + Socket.IO)** → Handles protocol simulation, metrics calculation, and data streaming.  
+  - **JavaScript Frontend (HTML5 + CSS3)** → Handles visualization, animations, and report display.  
 
 ---
 
 ## 🛠️ Technologies Used
-This project is built with standard web technologies, making it highly accessible and easy to modify:
+- **Frontend**  
+  - HTML5 → Interface structure  
+  - CSS3 → Styling and responsiveness  
+  - JavaScript (ES6+) → Visualization, animations, data updates  
 
-- **HTML5**: Structures the application's user interface.  
-- **CSS3**: Provides the modern, responsive, and user-friendly styling.  
-- **JavaScript (ES6+)**: Powers the entire simulation logic, including:  
-  - Node movement and physics (Mobility Models).  
-  - Protocol behavior simulation.  
-  - Canvas rendering and animation.  
-  - Data collection and report generation.  
+- **Backend**  
+  - Python 3.x  
+  - Flask (for web server & REST endpoints)  
+  - Flask-SocketIO (real-time communication with frontend)  
+  - Simulation Engine (custom Python logic for mobility models, routing protocols, metrics)   
 
 ---
 
@@ -37,7 +40,7 @@ No installation is needed. Simply download the project files and open the `index
 
 1. Clone or download the repository.  
 2. Navigate to the project directory.  
-3. Double-click `index.html` to open it in your browser.  
+3. run python app.py 
 
 ---
 
