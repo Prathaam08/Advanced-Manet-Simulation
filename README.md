@@ -1,33 +1,3 @@
-# Advanced-Manet-Simulation
-
-COMPLETE MANET AUTO-PROTOCOL TESTER PROJECT STRUCTURE
-================================================================
-
-📁 manet_auto_tester/
-├── 📄 app.py                          # Main Flask application with auto-testing routes
-├── 📄 requirements.txt                # Python dependencies
-├── 📁 simulation_engine/              
-│   ├── 📄 __init__.py                 # Empty package file
-│   ├── 📄 config.py                   # Global stop/start flags for simulations
-│   ├── 📄 manet_models.py            # Node and Packet classes with mobility
-│   ├── 📄 protocols.py               # AODV, DSDV, DSR, OLSR implementations  
-│   ├── 📄 simulator.py               # Core SimPy-based simulation engine
-│   └── 📄 auto_protocol_tester.py    # 🔥 NEW: Auto-testing system
-├── 📁 ml_module/                      
-│   ├── 📄 __init__.py                 # Empty package file
-│   └── 📄 predictor.py               # Optional ML protocol predictor
-├── 📁 templates/                      
-│   └── 📄 index.html                 # 🔥 NEW: Enhanced dashboard UI
-├── 📁 static/                         
-│   ├── 📁 css/
-│   │   └── 📄 style.css              # 🔥 NEW: Modern gradient-based styling
-│   └── 📁 js/
-│       └── 📄 app.js                 # 🔥 NEW: Auto-testing frontend logic
-└── 📁 data/                          # Auto-created directories
-    ├── 📁 simulations/               # Individual test results
-    └── 📁 test_results/              # Auto-testing analysis files
-
-
 # 🌐 MANET Protocol Auto-Tester
 **Advanced Mobile Ad-hoc Network Protocol Testing & Analysis Tool**
 
