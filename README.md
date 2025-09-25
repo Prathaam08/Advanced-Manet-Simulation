@@ -27,102 +27,79 @@ COMPLETE MANET AUTO-PROTOCOL TESTER PROJECT STRUCTURE
     ├── 📁 simulations/               # Individual test results
     └── 📁 test_results/              # Auto-testing analysis files
 
-INSTALLATION & SETUP
-====================
 
-1. CREATE PROJECT & ENVIRONMENT:
-   ```bash
-   mkdir manet_auto_tester && cd manet_auto_tester
-   python -m venv venv
-   source venv/bin/activate  # Windows: venv\Scripts\activate
-   ```
+# 🌐 MANET Protocol Auto-Tester
+**Advanced Mobile Ad-hoc Network Protocol Testing & Analysis Tool**
 
-2. INSTALL DEPENDENCIES:
-   ```bash
-   pip install -r requirements.txt
-   ```
+The **MANET Protocol Auto-Tester** is a web-based simulation tool designed for students, researchers, and network enthusiasts to visualize and compare the performance of various Mobile Ad-hoc Network (MANET) routing protocols. It provides an intuitive interface to configure network scenarios, run automated tests, and analyze results through a comprehensive report.
 
-3. CREATE DIRECTORIES:
-   ```bash
-   mkdir -p simulation_engine ml_module templates static/{css,js} data/{simulations,test_results}
-   ```
+---
 
-4. COPY ALL PROVIDED CODE FILES to their respective locations
+## ✨ Key Features
+- **Interactive Visualization**: Real-time canvas displays the network topology, node movements, and active communication links.  
+- **Flexible Configuration**: Easily set up network parameters such as number of nodes, simulation area, transmission range, and node mobility models.  
+- **Automated Multi-Protocol Testing**: Select and automatically test multiple MANET protocols (AODV, DSDV, DSR, OLSR) under the same conditions for direct comparison.  
+- **Customizable Scenarios**: Run multiple test scenarios with varying random seeds or define specific source-destination pairs for targeted analysis.  
+- **Live Performance Metrics**: View key metrics like the best-performing protocol and packet delivery rate in real-time as the simulation progresses.  
+- **Detailed Reporting**: Generate a comprehensive final report that summarizes the performance of each protocol across all test scenarios, highlighting key metrics like:  
+  - 📦 Packet Delivery Ratio (PDR)  
+  - ⏱️ Average End-to-End Delay  
+  - 📊 Routing Overhead  
+- **Zero Installation**: Runs entirely in any modern web browser with no setup required.  
 
-5. RUN APPLICATION:
-   ```bash
-   python app.py
-   ```
+---
 
-6. ACCESS: http://localhost:5000
+## 🛠️ Technologies Used
+This project is built with standard web technologies, making it highly accessible and easy to modify:
 
-🔥 KEY NEW FEATURES (What Your Teacher Wanted)
-==============================================
+- **HTML5**: Structures the application's user interface.  
+- **CSS3**: Provides the modern, responsive, and user-friendly styling.  
+- **JavaScript (ES6+)**: Powers the entire simulation logic, including:  
+  - Node movement and physics (Mobility Models).  
+  - Protocol behavior simulation.  
+  - Canvas rendering and animation.  
+  - Data collection and report generation.  
 
-❌ OLD APPROACH: User manually sets parameters (nodes, speed, range, etc.)
-✅ NEW APPROACH: User just clicks "Find Best Protocol" button!
+---
 
-🎯 AUTO-TESTING WORKFLOW:
-1. **User Input**: Only chooses number of test scenarios (3-10)
-2. **System Generates**: Random network topologies with varied parameters:
-   - Random number of nodes (20-80)
-   - Random node speeds (2-25 m/s) 
-   - Random area sizes (800x800 to 1500x1500)
-   - Random traffic loads (5-30 packets/sec)
-   - Random transmission ranges (100-250m)
+## 🚀 How to Run
+No installation is needed. Simply download the project files and open the `index.html` file in your preferred web browser.
 
-3. **Comprehensive Testing**: Tests ALL 4 protocols on EACH scenario
-   - AODV vs DSDV vs DSR vs OLSR
-   - Real-time visualization during testing
-   - Live metrics updates (PDR, delay, throughput, energy)
+1. Clone or download the repository.  
+2. Navigate to the project directory.  
+3. Double-click `index.html` to open it in your browser.  
 
-4. **Intelligent Analysis**: 
-   - Composite scoring system (PDR 30%, Delay 25%, Throughput 20%, Energy 15%, Overhead 10%)
-   - Statistical analysis across all test combinations
-   - Confidence rating for recommendations
+---
 
-5. **Results Presentation**:
-   - 🏆 Winner Banner with best protocol + confidence score
-   - 📊 Protocol Rankings with detailed performance metrics  
-   - 📋 Complete results table for all protocol-scenario combinations
-   - 💾 Automatic saving of analysis results
+## ⚙️ How to Use the Tester
 
-🎨 UI/UX ENHANCEMENTS:
-====================
-- **Smart Control Panel**: Gradient backgrounds, one-click testing
-- **Real-time Progress**: Shows current test (e.g., "Testing AODV on Scenario 3")  
-- **Live Network Visualization**: D3.js topology with energy-colored nodes
-- **Modern Dashboard**: Bootstrap 5 + custom CSS with animations
-- **Responsive Design**: Works on desktop, tablet, mobile
+### 🔧 Network Configuration
+- **Number of Nodes**: Set the total number of mobile nodes in the network.  
+- **Area Width/Height**: Define the dimensions of the simulation area in meters.  
+- **Transmission Range**: Specify the maximum communication range for each node.  
 
-⚙️ TECHNICAL IMPLEMENTATION:
-============================
-- **Backend**: Flask + SocketIO for real-time updates
-- **Simulation**: SimPy discrete-event simulation with 4 routing protocols
-- **Frontend**: Vanilla JS + Chart.js + D3.js (no heavy frameworks)
-- **Auto-Testing**: Multi-threaded background execution
-- **Data Persistence**: JSON storage for all results
-- **ML Component**: Optional protocol predictor using scikit-learn
+### 🧪 Test Configuration
+- **Number of Test Scenarios**: Define how many times the simulation will run (with different random seeds) to average the results.  
+- **Simulation Time**: Set the duration for each individual scenario in seconds.  
+- **Mobility Model**: Choose how the nodes move (Random Waypoint or Static).  
+- **Packet Generation Rate**: Set the frequency of data packet creation.  
 
-🚀 USAGE (Super Simple):
-========================
-1. Open http://localhost:5000
-2. Select number of test scenarios (5 recommended)
-3. Click "Find Best Protocol" 
-4. Watch real-time testing progress
-5. Get instant recommendation with confidence score!
+### 🎯 Route Selection (Optional)
+- By default, the simulation uses random source and destination nodes for each run.  
+- Check **"Enable Source & Destination Selection"** to test a specific communication path.  
+- Select the desired nodes from the dropdowns.  
 
-📈 EXAMPLE OUTPUT:
-=================
-🏆 BEST PROTOCOL FOUND: AODV
-   Overall Score: 87.3/100
-   Confidence: 94.2%
-   Based on 20 tests across 5 scenarios
+### 📡 Protocol Selection
+- Check the boxes for the routing protocols you wish to test and compare (e.g., AODV, DSDV, DSR, OLSR).  
 
-📊 RANKINGS:
-   1. AODV    - 87.3 (PDR: 92%, Delay: 45ms, Throughput: 28kbps)
-   2. DSDV    - 79.1 (PDR: 89%, Delay: 52ms, Throughput: 25kbps)  
-   3. OLSR    - 74.6 (PDR: 86%, Delay: 48ms, Throughput: 31kbps)
-   4. DSR     - 68.2 (PDR: 78%, Delay: 67ms, Throughput: 22kbps)
+### ▶️ Start the Test
+1. Click the **🚀 Start Auto Test** button.  
+2. Observe node movements and network activity on the canvas.  
+3. Monitor the live progress and results in the stats panel.  
 
-This gives users the "best protocol" recommendation WITHOUT requiring them to understand or configure network parameters.
+### 📊 View the Report
+- Once the simulation is complete, a **"Simulation Complete!"** alert will appear.  
+- Click the **📊 View Report** button to open a detailed modal comparing the performance of all tested protocols.  
+
+---
+
