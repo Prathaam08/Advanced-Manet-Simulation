@@ -1,0 +1,58 @@
+{
+  "test_configuration": {
+    "num_nodes": 20,
+    "area_width": 1000,
+    "area_height": 1000,
+    "transmission_range": 200,
+    "num_scenarios": 5,
+    "simulation_time": 100,
+    "mobility_model": "random_waypoint",
+    "packet_rate": 1,
+    "protocols": [
+      "AODV",
+      "DSDV",
+      "DSR",
+      "OLSR"
+    ],
+    "enable_route_selection": false,
+    "source_node": null,
+    "destination_node": null
+  },
+  "test_results": [
+    {
+      "protocol": "AODV",
+      "scenario": 0,
+      "timestamp": "2025-10-12T18:52:56.730814",
+      "metrics": {
+        "packet_delivery_ratio": 0.0,
+        "average_delay": 0.0,
+        "routing_overhead": 0.0,
+        "throughput": 0.0,
+        "energy_consumption": 7.400000000000001,
+        "route_discovery_time": 0.0,
+        "hop_count": 0.0,
+        "packet_loss": 1.0
+      },
+      "route_info": {
+        "source_node": 6,
+        "destination_node": 19,
+        "fixed_route": false
+      },
+      "network_config": {
+        "num_nodes": 20,
+        "area_size": "1000x1000",
+        "transmission_range": 200,
+        "mobility_model": "random_waypoint"
+      }
+    }
+  ],
+  "test_completion_time": "2025-10-12T18:52:57.759930",
+  "total_tests": 1,
+  "protocols_tested": [
+    "AODV",
+    "DSDV",
+    "DSR",
+    "OLSR"
+  ],
+  "scenarios_per_protocol": 5
+}

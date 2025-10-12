@@ -95,54 +95,57 @@ class AutoProtocolTester:
     
     def run_protocol_test(self, protocol, scenario):
         """Run a single protocol test on a scenario"""
+        # Create simulator with new interface
         simulator = MANETSimulator(
             num_nodes=scenario.num_nodes,
-            area_size=scenario.area_size,
-            protocol=protocol,
-            sim_time=scenario.sim_time,
-            traffic_load=scenario.traffic_load,
-            node_speed=scenario.node_speed,
-            tx_range=scenario.tx_range,
-            pause_time=scenario.pause_time
+            area_width=scenario.area_size[0],
+            area_height=scenario.area_size[1],
+            transmission_range=scenario.tx_range,
+            simulation_time=scenario.sim_time,
+            mobility_model='random_waypoint'  # Use random waypoint for testing
         )
         
-        final_result = None
+        # Generate random source and destination nodes
+        source_node = random.randint(1, scenario.num_nodes)
+        destination_node = random.randint(1, scenario.num_nodes)
+        while destination_node == source_node:
+            destination_node = random.randint(1, scenario.num_nodes)
         
-        for event in simulator.run():
+        # Run simulation
+        try:
+            results = simulator.run_simulation(
+                protocol=protocol,
+                source_node=source_node,
+                destination_node=destination_node,
+                packet_rate=scenario.traffic_load
+            )
+            
             if config.get_stop_simulation():
                 return None
-                
-            if isinstance(event, dict):
-                event['current_protocol'] = protocol
-                event['current_scenario'] = scenario.scenario_id
-                event['testing_mode'] = True
-                self.socketio.emit('protocol_test_update', event)
             
-            if event.get('type') == 'final_metrics':
-                final_result = event
-                break
-        
-        if final_result:
+            # Calculate score
             score = self.calculate_protocol_score(
-                final_result['pdr'],
-                final_result['avg_delay'],
-                final_result['throughput'],
-                final_result['energy'],
-                final_result['overhead']
+                results['delivery_ratio'],
+                results['avg_delay'],
+                results['throughput'],
+                results['energy_consumption'],
+                results['routing_overhead']
             )
             
             return ProtocolResult(
                 protocol=protocol,
                 scenario_id=scenario.scenario_id,
-                pdr=final_result['pdr'],
-                avg_delay=final_result['avg_delay'],
-                throughput=final_result['throughput'],
-                energy_consumption=final_result['energy'],
-                overhead=final_result['overhead'],
+                pdr=results['delivery_ratio'],
+                avg_delay=results['avg_delay'],
+                throughput=results['throughput'],
+                energy_consumption=results['energy_consumption'],
+                overhead=results['routing_overhead'],
                 score=score
             )
-        
-        return None
+            
+        except Exception as e:
+            print(f"Error in protocol test: {e}")
+            return None
     
     def start_comprehensive_testing(self, num_scenarios=5):
         """Start comprehensive protocol testing across multiple scenarios"""

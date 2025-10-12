@@ -1,1608 +1,1787 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MANET Protocol Auto-Tester</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
     <style>
-        /* General Styles */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            min-height: 100vh;
-            padding: 20px;
-            color: #333;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-        }
-
-        .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-        }
-
-        .header p {
-            font-size: 1.2em;
-            opacity: 0.9;
-        }
-
-        .controls {
-            padding: 30px;
-            background: #f8f9fa;
-        }
-
-        .control-section {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 25px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-        }
-
-        .control-section h3 {
-            margin-bottom: 20px;
-            color: #495057;
-            font-size: 1.3em;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .control-group {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-        }
-
-        .control-item {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .control-item label {
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: #495057;
-        }
-
-        .control-item input, .control-item select {
-            padding: 12px;
-            border: 1px solid #ced4da;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: all 0.3s ease;
-        }
-
-        .control-item input:focus, .control-item select:focus {
-            outline: none;
-            border-color: #4facfe;
-            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.2);
-        }
-
-        .control-item input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
-            accent-color: #4facfe;
-            margin-right: 10px;
-        }
-
-        .checkbox-container {
-            display: flex;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
-        .route-options {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-top: 15px;
-        }
-
-        .route-options.disabled {
-            opacity: 0.5;
-            pointer-events: none;
-        }
-
-        .info-text {
-            font-size: 0.85em;
-            color: #6c757d;
-            font-style: italic;
-            margin-top: 5px;
-        }
-
-        button {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            color: white;
-            border: none;
-            padding: 15px 25px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);
-        }
-
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(79, 172, 254, 0.4);
-        }
-
-        button:disabled {
-            background: #6c757d;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        #stop_test {
-            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
-        }
-
-        #view_report {
-            background: linear-gradient(135deg, #10ac84 0%, #1dd1a1 100%);
-        }
-
-        /* Simulation Area */
-        .simulation-area {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 30px;
-            padding: 30px;
-            background: white;
-        }
-
-        .canvas-container {
-            border: 2px solid #e9ecef;
-            border-radius: 10px;
-            overflow: hidden;
-            background: #f8f9fa;
-            height: 600px;
-            position: relative;
-        }
-
-        #simulationCanvas {
-            width: 100%;
-            height: 100%;
-            display: block;
-            background: #f8f9fa;
-        }
-
-        .stats {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 20px;
-            height: fit-content;
-        }
-
-        .stats h3 {
-            margin-bottom: 15px;
-            color: #495057;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #e9ecef;
-        }
-
-        .stat-item {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 12px;
-            padding: 10px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-
-        .stat-label {
-            font-weight: 600;
-            color: #6c757d;
-        }
-
-        .stat-value {
-            font-weight: bold;
-            color: #495057;
-        }
-
-        /* Fix for paragraph text visibility */
-        .report-section p,
-        .modal-body p,
-        .test-summary p,
-        .protocol-comparison p,
-        .best-protocol p {
-            color: #333333 !important;
-        }
-
-        /* Specific fix for route information paragraphs */
-        .route-info p {
-            color: #333333 !important;
-        }
-
-        /* Ensure all text in report sections is visible */
-        .modal-body .report-section * {
-            color: #333333;
-        }
-
-        /* Enhanced styles for better UX */
-        .route-selection {
-            border: 2px dashed #4facfe;
-            background: rgba(79, 172, 254, 0.05);
-            margin-top: 20px;
-        }
-
-        /* Report Modal Styles */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.8);
-            backdrop-filter: blur(5px);
-        }
-
-        .modal-content {
-            background-color: white;
-            margin: 2% auto;
-            padding: 0;
-            border-radius: 15px;
-            width: 95%;
-            max-width: 1200px;
-            height: 90%;
-            overflow: hidden;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
-            animation: modalSlideIn 0.3s ease-out;
-        }
-
-        @keyframes modalSlideIn {
-            from { transform: translateY(-50px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        .modal-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-header h2 {
-            margin: 0;
-            font-size: 1.8em;
-        }
-
-        .close {
-            color: white;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-            border: none;
-            background: none;
-            padding: 5px;
-            border-radius: 5px;
-            transition: background-color 0.3s;
-        }
-
-        .close:hover {
-            background-color: rgba(255,255,255,0.2);
-        }
-
-        .modal-body {
-            padding: 30px;
-            height: calc(100% - 140px);
-            overflow-y: auto;
-        }
-
-        .report-section {
-            margin-bottom: 30px;
-            padding: 25px;
-            background: #f8f9fa;
-            border-radius: 12px;
-            border-left: 4px solid #4facfe;
-        }
-
-        .report-section h3 {
-            margin: 0 0 20px 0;
-            color: #495057;
-            font-size: 1.4em;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .best-protocol {
-            background: linear-gradient(135deg, #28a745, #20c997);
-            color: white;
-            padding: 20px;
-            border-radius: 12px;
-            text-align: center;
-            margin-bottom: 25px;
-        }
-
-        .best-protocol h3 {
-            margin: 0 0 15px 0;
-            font-size: 1.6em;
-            color: white;
-        }
-
-        .protocol-comparison {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-        }
-
-        .protocol-card {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            border-top: 4px solid #007bff;
-        }
-
-        .protocol-card.best {
-            border-top-color: #28a745;
-            background: linear-gradient(135deg, #d4edda, #c3e6cb);
-        }
-
-        .protocol-card h4 {
-            margin: 0 0 15px 0;
-            color: #495057;
-            font-size: 1.2em;
-        }
-
-        .metric-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 0;
-            border-bottom: 1px solid #e9ecef;
-        }
-
-        .metric-row:last-child {
-            border-bottom: none;
-        }
-
-        .metric-label {
-            font-weight: 600;
-            color: #6c757d;
-        }
-
-        .metric-value {
-            font-weight: bold;
-            color: #495057;
-        }
-
-        .chart-container {
-            margin: 20px 0;
-            height: 400px;
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-
-        .download-buttons {
-            display: flex;
-            gap: 15px;
-            margin-top: 30px;
-            justify-content: center;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 10px;
-        }
-
-        .btn-download {
-            background: linear-gradient(135deg, #dc3545, #e74c3c);
-            color: white;
-            border: none;
-            padding: 12px 25px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
-        }
-
-        .btn-download:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
-        }
-
-        /* Simulation completion alert */
-        .completion-alert {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: linear-gradient(135deg, #28a745, #20c997);
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            z-index: 1001;
-            transform: translateX(400px);
-            transition: transform 0.3s ease;
-        }
-
-        .completion-alert.show {
-            transform: translateX(0);
-        }
-
-        .completion-alert h4 {
-            margin: 0 0 10px 0;
-            font-size: 1.2em;
-        }
-
-        .completion-alert button {
-            background: rgba(255,255,255,0.2);
-            color: white;
-            border: 1px solid rgba(255,255,255,0.3);
-            padding: 8px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-
-        .completion-alert button:hover {
-            background: rgba(255,255,255,0.3);
-        }
-
-        /* Loading spinner */
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #4facfe;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .test-summary {
-            background: linear-gradient(135deg, #17a2b8, #138496);
-            color: white;
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 25px;
-        }
-
-        .test-summary h3 {
-            margin: 0 0 15px 0;
-            font-size: 1.5em;
-            color: white;
-        }
-
-        .summary-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-top: 15px;
-        }
-
-        .summary-item {
-            background: rgba(255,255,255,0.1);
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
-        }
-
-        .summary-item .value {
-            font-size: 1.8em;
-            font-weight: bold;
-            display: block;
-        }
-
-        .summary-item .label {
-            font-size: 0.9em;
-            opacity: 0.9;
-        }
-
-        .canvas-overlay {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 10px;
-            border-radius: 5px;
-            font-size: 14px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-
-        .node {
-            position: absolute;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            font-size: 12px;
-            transform: translate(-50%, -50%);
-            transition: all 0.3s ease;
-            cursor: pointer;
-            z-index: 10;
-        }
-
-        .node.source {
-            background: #28a745;
-            box-shadow: 0 0 0 4px rgba(40, 167, 69, 0.3);
-        }
-
-        .node.destination {
-            background: #dc3545;
-            box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.3);
-        }
-
-        .node.normal {
-            background: #4facfe;
-            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.3);
-        }
-
-        .node.highlighted {
-            background: #ffc107;
-            box-shadow: 0 0 0 5px rgba(255, 193, 7, 0.5);
-            z-index: 20;
-            transform: translate(-50%, -50%) scale(1.2);
-        }
-
-        .node.connected {
-            background: #17a2b8;
-            box-shadow: 0 0 0 4px rgba(23, 162, 184, 0.4);
-            z-index: 15;
-        }
-
-        .connection {
-            position: absolute;
-            background: #6c757d;
-            height: 2px;
-            transform-origin: 0 0;
-            opacity: 0.6;
-            z-index: 1;
-        }
-
-        .connection.active {
-            background: #28a745;
-            opacity: 0.8;
-            box-shadow: 0 0 5px rgba(40, 167, 69, 0.5);
-        }
-
-        .connection.highlighted {
-            background: #ffc107;
-            opacity: 1;
-            height: 3px;
-            box-shadow: 0 0 8px rgba(255, 193, 7, 0.7);
-            z-index: 5;
-        }
-
-        .node-info {
-            position: absolute;
-            background: rgba(255, 255, 255, 0.95);
-            border: 1px solid #ced4da;
-            border-radius: 8px;
-            padding: 10px;
-            font-size: 12px;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
-            pointer-events: none;
-            z-index: 100;
-            max-width: 200px;
-        }
-
-        .node-info h4 {
-            margin: 0 0 5px 0;
-            color: #495057;
-        }
-
-        .node-info p {
-            margin: 2px 0;
-            color: #6c757d;
-        }
+      /* General Styles */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        min-height: 100vh;
+        padding: 20px;
+        color: #333;
+      }
+
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+      }
+
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        text-align: center;
+      }
+
+      .header h1 {
+        font-size: 2.5em;
+        margin-bottom: 10px;
+      }
+
+      .header p {
+        font-size: 1.2em;
+        opacity: 0.9;
+      }
+
+      .controls {
+        padding: 30px;
+        background: #f8f9fa;
+      }
+
+      .control-section {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 25px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+      }
+
+      .control-section h3 {
+        margin-bottom: 20px;
+        color: #495057;
+        font-size: 1.3em;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .control-group {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+      }
+
+      .control-item {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .control-item label {
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #495057;
+      }
+
+      .control-item input,
+      .control-item select {
+        padding: 12px;
+        border: 1px solid #ced4da;
+        border-radius: 8px;
+        font-size: 16px;
+        transition: all 0.3s ease;
+      }
+
+      .control-item input:focus,
+      .control-item select:focus {
+        outline: none;
+        border-color: #4facfe;
+        box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.2);
+      }
+
+      .control-item input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        accent-color: #4facfe;
+        margin-right: 10px;
+      }
+
+      .checkbox-container {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+      }
+
+      .route-options {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-top: 15px;
+      }
+
+      .route-options.disabled {
+        opacity: 0.5;
+        pointer-events: none;
+      }
+
+      .info-text {
+        font-size: 0.85em;
+        color: #6c757d;
+        font-style: italic;
+        margin-top: 5px;
+      }
+
+      button {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+        border: none;
+        padding: 15px 25px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);
+      }
+
+      button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(79, 172, 254, 0.4);
+      }
+
+      button:disabled {
+        background: #6c757d;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+
+      #stop_test {
+        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+      }
+
+      #view_report {
+        background: linear-gradient(135deg, #10ac84 0%, #1dd1a1 100%);
+      }
+
+      /* Simulation Area */
+      .simulation-area {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 30px;
+        padding: 30px;
+        background: white;
+      }
+
+      .canvas-container {
+        border: 2px solid #e9ecef;
+        border-radius: 10px;
+        overflow: hidden;
+        background: #f8f9fa;
+        height: 600px;
+        position: relative;
+      }
+
+      #simulationCanvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+        background: #f8f9fa;
+      }
+
+      .stats {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        height: fit-content;
+      }
+
+      .stats h3 {
+        margin-bottom: 15px;
+        color: #495057;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #e9ecef;
+      }
+
+      .stat-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 12px;
+        padding: 10px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+      }
+
+      .stat-label {
+        font-weight: 600;
+        color: #6c757d;
+      }
+
+      .stat-value {
+        font-weight: bold;
+        color: #495057;
+      }
+
+      /* Fix for paragraph text visibility */
+      .report-section p,
+      .modal-body p,
+      .test-summary p,
+      .protocol-comparison p,
+      .best-protocol p {
+        color: #333333 !important;
+      }
+
+      /* Specific fix for route information paragraphs */
+      .route-info p {
+        color: #333333 !important;
+      }
+
+      /* Ensure all text in report sections is visible */
+      .modal-body .report-section * {
+        color: #333333;
+      }
+
+      /* Enhanced styles for better UX */
+      .route-selection {
+        border: 2px dashed #4facfe;
+        background: rgba(79, 172, 254, 0.05);
+        margin-top: 20px;
+      }
+
+      /* Report Modal Styles */
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(5px);
+      }
+
+      .modal-content {
+        background-color: white;
+        margin: 2% auto;
+        padding: 0;
+        border-radius: 15px;
+        width: 95%;
+        max-width: 1200px;
+        height: 90%;
+        overflow: hidden;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+        animation: modalSlideIn 0.3s ease-out;
+      }
+
+      @keyframes modalSlideIn {
+        from {
+          transform: translateY(-50px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      .modal-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .modal-header h2 {
+        margin: 0;
+        font-size: 1.8em;
+      }
+
+      .close {
+        color: white;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+        border: none;
+        background: none;
+        padding: 5px;
+        border-radius: 5px;
+        transition: background-color 0.3s;
+      }
+
+      .close:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+      }
+
+      .modal-body {
+        padding: 30px;
+        height: calc(100% - 140px);
+        overflow-y: auto;
+      }
+
+      .report-section {
+        margin-bottom: 30px;
+        padding: 25px;
+        background: #f8f9fa;
+        border-radius: 12px;
+        border-left: 4px solid #4facfe;
+      }
+
+      .report-section h3 {
+        margin: 0 0 20px 0;
+        color: #495057;
+        font-size: 1.4em;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .best-protocol {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        padding: 20px;
+        border-radius: 12px;
+        text-align: center;
+        margin-bottom: 25px;
+      }
+
+      .best-protocol h3 {
+        margin: 0 0 15px 0;
+        font-size: 1.6em;
+        color: white;
+      }
+
+      .protocol-comparison {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+      }
+
+      .protocol-card {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        border-top: 4px solid #007bff;
+      }
+
+      .protocol-card.best {
+        border-top-color: #28a745;
+        background: linear-gradient(135deg, #d4edda, #c3e6cb);
+      }
+
+      .protocol-card h4 {
+        margin: 0 0 15px 0;
+        color: #495057;
+        font-size: 1.2em;
+      }
+
+      .metric-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid #e9ecef;
+      }
+
+      .metric-row:last-child {
+        border-bottom: none;
+      }
+
+      .metric-label {
+        font-weight: 600;
+        color: #6c757d;
+      }
+
+      .metric-value {
+        font-weight: bold;
+        color: #495057;
+      }
+
+      .chart-container {
+        margin: 20px 0;
+        height: 400px;
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .download-buttons {
+        display: flex;
+        gap: 15px;
+        margin-top: 30px;
+        justify-content: center;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 10px;
+      }
+
+      .btn-download {
+        background: linear-gradient(135deg, #dc3545, #e74c3c);
+        color: white;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+      }
+
+      .btn-download:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
+      }
+
+      /* Simulation completion alert */
+      .completion-alert {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        z-index: 1001;
+        transform: translateX(400px);
+        transition: transform 0.3s ease;
+      }
+
+      .completion-alert.show {
+        transform: translateX(0);
+      }
+
+      .completion-alert h4 {
+        margin: 0 0 10px 0;
+        font-size: 1.2em;
+      }
+
+      .completion-alert button {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        padding: 8px 15px;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-top: 10px;
+      }
+
+      .completion-alert button:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+
+      /* Loading spinner */
+      .spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #4facfe;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 20px auto;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .test-summary {
+        background: linear-gradient(135deg, #17a2b8, #138496);
+        color: white;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 25px;
+      }
+
+      .test-summary h3 {
+        margin: 0 0 15px 0;
+        font-size: 1.5em;
+        color: white;
+      }
+
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-top: 15px;
+      }
+
+      .summary-item {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 15px;
+        border-radius: 8px;
+        text-align: center;
+      }
+
+      .summary-item .value {
+        font-size: 1.8em;
+        font-weight: bold;
+        display: block;
+      }
+
+      .summary-item .label {
+        font-size: 0.9em;
+        opacity: 0.9;
+      }
+
+      .canvas-overlay {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 10px;
+        border-radius: 5px;
+        font-size: 14px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+
+      .node {
+        position: absolute;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 12px;
+        transform: translate(-50%, -50%);
+        transition: all 0.3s ease;
+        cursor: pointer;
+        z-index: 10;
+      }
+
+      .node.source {
+        background: #28a745;
+        box-shadow: 0 0 0 4px rgba(40, 167, 69, 0.3);
+      }
+
+      .node.destination {
+        background: #dc3545;
+        box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.3);
+      }
+
+      .node.normal {
+        background: #4facfe;
+        box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.3);
+      }
+
+      .node.highlighted {
+        background: #ffc107;
+        box-shadow: 0 0 0 5px rgba(255, 193, 7, 0.5);
+        z-index: 20;
+        transform: translate(-50%, -50%) scale(1.2);
+      }
+
+      .node.connected {
+        background: #17a2b8;
+        box-shadow: 0 0 0 4px rgba(23, 162, 184, 0.4);
+        z-index: 15;
+      }
+
+      .connection {
+        position: absolute;
+        background: #6c757d;
+        height: 2px;
+        transform-origin: 0 0;
+        opacity: 0.6;
+        z-index: 1;
+      }
+
+      .connection.active {
+        background: #28a745;
+        opacity: 0.8;
+        box-shadow: 0 0 5px rgba(40, 167, 69, 0.5);
+      }
+
+      .connection.highlighted {
+        background: #ffc107;
+        opacity: 1;
+        height: 3px;
+        box-shadow: 0 0 8px rgba(255, 193, 7, 0.7);
+        z-index: 5;
+      }
+
+      .node-info {
+        position: absolute;
+        background: rgba(255, 255, 255, 0.95);
+        border: 1px solid #ced4da;
+        border-radius: 8px;
+        padding: 10px;
+        font-size: 12px;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+        pointer-events: none;
+        z-index: 100;
+        max-width: 200px;
+      }
+
+      .node-info h4 {
+        margin: 0 0 5px 0;
+        color: #495057;
+      }
+
+      .node-info p {
+        margin: 2px 0;
+        color: #6c757d;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="container">
-        <div class="header">
-            <h1>🌐 MANET Protocol Auto-Tester</h1>
-            <p>Advanced Mobile Ad-hoc Network Protocol Testing & Analysis</p>
+      <div class="header">
+        <h1>🌐 MANET Protocol Auto-Tester</h1>
+        <p>Advanced Mobile Ad-hoc Network Protocol Testing & Analysis</p>
+      </div>
+
+      <div class="controls">
+        <!-- Network Configuration Section -->
+        <div class="control-section">
+          <h3>🔧 Network Configuration</h3>
+          <div class="control-group">
+            <div class="control-item">
+              <label for="num_nodes">Number of Nodes</label>
+              <input
+                type="number"
+                id="num_nodes"
+                value="20"
+                min="5"
+                max="100"
+              />
+            </div>
+            <div class="control-item">
+              <label for="area_width">Area Width (m)</label>
+              <input
+                type="number"
+                id="area_width"
+                value="1000"
+                min="100"
+                max="5000"
+              />
+            </div>
+            <div class="control-item">
+              <label for="area_height">Area Height (m)</label>
+              <input
+                type="number"
+                id="area_height"
+                value="1000"
+                min="100"
+                max="5000"
+              />
+            </div>
+            <div class="control-item">
+              <label for="transmission_range">Transmission Range (m)</label>
+              <input
+                type="number"
+                id="transmission_range"
+                value="200"
+                min="50"
+                max="1000"
+              />
+            </div>
+          </div>
         </div>
 
-        <div class="controls">
-            <!-- Network Configuration Section -->
-            <div class="control-section">
-                <h3>🔧 Network Configuration</h3>
-                <div class="control-group">
-                    <div class="control-item">
-                        <label for="num_nodes">Number of Nodes</label>
-                        <input type="number" id="num_nodes" value="20" min="5" max="100">
-                    </div>
-                    <div class="control-item">
-                        <label for="area_width">Area Width (m)</label>
-                        <input type="number" id="area_width" value="1000" min="100" max="5000">
-                    </div>
-                    <div class="control-item">
-                        <label for="area_height">Area Height (m)</label>
-                        <input type="number" id="area_height" value="1000" min="100" max="5000">
-                    </div>
-                    <div class="control-item">
-                        <label for="transmission_range">Transmission Range (m)</label>
-                        <input type="number" id="transmission_range" value="200" min="50" max="1000">
-                    </div>
-                </div>
+        <!-- Test Configuration Section -->
+        <div class="control-section">
+          <h3>🧪 Test Configuration</h3>
+          <div class="control-group">
+            <div class="control-item">
+              <label for="num_scenarios">Number of Test Scenarios</label>
+              <input
+                type="number"
+                id="num_scenarios"
+                value="5"
+                min="1"
+                max="50"
+              />
             </div>
-
-            <!-- Test Configuration Section -->
-            <div class="control-section">
-                <h3>🧪 Test Configuration</h3>
-                <div class="control-group">
-                    <div class="control-item">
-                        <label for="num_scenarios">Number of Test Scenarios</label>
-                        <input type="number" id="num_scenarios" value="5" min="1" max="50">
-                    </div>
-                    <div class="control-item">
-                        <label for="simulation_time">Simulation Time (s) (OPTIONAL)</label>
-                        <input type="number" id="simulation_time" value="100" min="10" max="1000">
-                    </div>
-                    <div class="control-item">
-                        <label for="mobility_model">Mobility Model</label>
-                        <select id="mobility_model">
-                            <!-- <option value="random_walk">Random Walk</option> -->
-                            <option value="random_waypoint">Random Waypoint</option>
-                            <option value="static">Static</option>
-                        </select>
-                    </div>
-                    <div class="control-item">
-                        <label for="packet_rate">Packet Generation Rate (packets/s)</label>
-                        <input type="number" id="packet_rate" value="1" min="0.1" max="10" step="0.1">
-                    </div>
-                </div>
+            <div class="control-item">
+              <label for="simulation_time"
+                >Simulation Time (s) (OPTIONAL)</label
+              >
+              <input
+                type="number"
+                id="simulation_time"
+                value="100"
+                min="10"
+                max="1000"
+              />
             </div>
-
-            <!-- Source & Destination Selection Section -->
-            <div class="control-section route-selection">
-                <h3>🎯 Route Selection (Optional)</h3>
-                
-                <div class="checkbox-container">
-                    <input type="checkbox" id="enable_route_selection" onchange="toggleRouteSelection()">
-                    <label for="enable_route_selection">
-                        <strong>Enable Source & Destination Selection</strong>
-                    </label>
-                </div>
-                
-                <div class="info-text">
-                    ℹ️ If enabled, simulation will run for the specific source-destination pair. Otherwise, random source-destination pairs will be used for each scenario.
-                </div>
-
-                <div class="route-options disabled" id="route_options">
-                    <div class="control-item">
-                        <label for="source_node">Source Node</label>
-                        <div class="node-selector">
-                            <select id="source_node" onchange="updateDestinationOptions()">
-                                <option value="">Select Source Node</option>
-                            </select>
-                            <div class="info-text">Node that will send packets</div>
-                        </div>
-                    </div>
-                    
-                    <div class="control-item">
-                        <label for="destination_node">Destination Node</label>
-                        <div class="node-selector">
-                            <select id="destination_node">
-                                <option value="">Select Destination Node</option>
-                            </select>
-                            <div class="info-text">Node that will receive packets</div>
-                        </div>
-                    </div>
-                </div>
+            <div class="control-item">
+              <label for="mobility_model">Mobility Model</label>
+              <select id="mobility_model">
+                <!-- <option value="random_walk">Random Walk</option> -->
+                <option value="random_waypoint">Random Waypoint</option>
+                <option value="static">Static</option>
+              </select>
             </div>
-
-            <!-- Protocol Selection Section -->
-            <div class="control-section">
-                <h3>📡 Protocol Selection</h3>
-                <div class="control-group">
-                    <div class="control-item">
-                        <input type="checkbox" id="aodv" checked>
-                        <label for="aodv">AODV (Ad-hoc On-Demand Distance Vector)</label>
-                    </div>
-                    <div class="control-item">
-                        <input type="checkbox" id="dsdv" checked>
-                        <label for="dsdv">DSDV (Destination-Sequenced Distance Vector)</label>
-                    </div>
-                    <div class="control-item">
-                        <input type="checkbox" id="dsr" checked>
-                        <label for="dsr">DSR (Dynamic Source Routing)</label>
-                    </div>
-                    <div class="control-item">
-                        <input type="checkbox" id="olsr" checked>
-                        <label for="olsr">OLSR (Optimized Link State Routing)</label>
-                    </div>
-                </div>
+            <div class="control-item">
+              <label for="packet_rate"
+                >Packet Generation Rate (packets/s)</label
+              >
+              <input
+                type="number"
+                id="packet_rate"
+                value="1"
+                min="0.1"
+                max="10"
+                step="0.1"
+              />
             </div>
-
-            <!-- Control Buttons -->
-            <div class="control-section">
-                <div class="control-group">
-                    <button id="start_test" onclick="startAutoTest()">🚀 Start Auto Test</button>
-                    <button id="stop_test" onclick="stopTest()" disabled>⏹️ Stop Test</button>
-                    <button id="view_report" onclick="showReport()" disabled>📊 View Report</button>
-                    <button onclick="clearResults()">🗑️ Clear Results</button>
-                </div>
-            </div>
+          </div>
         </div>
 
-        <!-- Simulation Area -->
-        <div class="simulation-area">
-            <div class="canvas-container">
-                <canvas id="simulationCanvas" width="800" height="600"></canvas>
-                <div class="canvas-overlay">
-                    <div>Network Topology Visualization</div>
-                    <div id="canvas_info">Not started</div>
-                    <div id="hover_info">Hover over a node to see connections</div>
-                </div>
+        <!-- Source & Destination Selection Section -->
+        <div class="control-section route-selection">
+          <h3>🎯 Route Selection (Optional)</h3>
+
+          <div class="checkbox-container">
+            <input
+              type="checkbox"
+              id="enable_route_selection"
+              onchange="toggleRouteSelection()"
+            />
+            <label for="enable_route_selection">
+              <strong>Enable Source & Destination Selection</strong>
+            </label>
+          </div>
+
+          <div class="info-text">
+            ℹ️ If enabled, simulation will run for the specific
+            source-destination pair. Otherwise, random source-destination pairs
+            will be used for each scenario.
+          </div>
+
+          <div class="route-options disabled" id="route_options">
+            <div class="control-item">
+              <label for="source_node">Source Node</label>
+              <div class="node-selector">
+                <select id="source_node" onchange="updateDestinationOptions()">
+                  <option value="">Select Source Node</option>
+                </select>
+                <div class="info-text">Node that will send packets</div>
+              </div>
             </div>
 
-            <div class="stats">
-                <h3>📈 Test Progress</h3>
-                <div class="stat-item">
-                    <span class="stat-label">Current Test:</span>
-                    <span class="stat-value" id="current_test">Not Started</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Progress:</span>
-                    <span class="stat-value" id="progress">0%</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Protocols Tested:</span>
-                    <span class="stat-value" id="protocols_tested">0</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Scenarios Completed:</span>
-                    <span class="stat-value" id="scenarios_completed">0</span>
-                </div>
-
-                <h3 id="current_route_section" style="display: none;">🎯 Current Route</h3>
-                <div class="stat-item" id="route_info" style="display: none;">
-                    <span class="stat-label">Source → Destination:</span>
-                    <span class="stat-value" id="current_route">-</span>
-                </div>
-
-                <h3>⚡ Current Results</h3>
-                <div class="stat-item">
-                    <span class="stat-label">Best Protocol:</span>
-                    <span class="stat-value" id="live_best_protocol">-</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Best Delivery Rate:</span>
-                    <span class="stat-value" id="live_best_delivery_rate">-</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Avg Delay (ms):</span>
-                    <span class="stat-value" id="live_best_delay">-</span>
-                </div>
+            <div class="control-item">
+              <label for="destination_node">Destination Node</label>
+              <div class="node-selector">
+                <select id="destination_node">
+                  <option value="">Select Destination Node</option>
+                </select>
+                <div class="info-text">Node that will receive packets</div>
+              </div>
             </div>
+          </div>
         </div>
+
+        <!-- Protocol Selection Section -->
+        <div class="control-section">
+          <h3>📡 Protocol Selection</h3>
+          <div class="control-group">
+            <div class="control-item">
+              <input type="checkbox" id="aodv" checked />
+              <label for="aodv">AODV (Ad-hoc On-Demand Distance Vector)</label>
+            </div>
+            <div class="control-item">
+              <input type="checkbox" id="dsdv" checked />
+              <label for="dsdv"
+                >DSDV (Destination-Sequenced Distance Vector)</label
+              >
+            </div>
+            <div class="control-item">
+              <input type="checkbox" id="dsr" checked />
+              <label for="dsr">DSR (Dynamic Source Routing)</label>
+            </div>
+            <div class="control-item">
+              <input type="checkbox" id="olsr" checked />
+              <label for="olsr">OLSR (Optimized Link State Routing)</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Control Buttons -->
+        <div class="control-section">
+          <div class="control-group">
+            <button id="start_test" onclick="startAutoTest()">
+              🚀 Start Auto Test
+            </button>
+            <button id="stop_test" onclick="stopTest()" disabled>
+              ⏹️ Stop Test
+            </button>
+            <button id="view_report" onclick="showReport()" disabled>
+              📊 View Report
+            </button>
+            <button onclick="clearResults()">🗑️ Clear Results</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Simulation Area -->
+      <div class="simulation-area">
+        <div class="canvas-container">
+          <canvas id="simulationCanvas" width="800" height="600"></canvas>
+          <div class="canvas-overlay">
+            <div>Network Topology Visualization</div>
+            <div id="canvas_info">Not started</div>
+            <div id="hover_info">Hover over a node to see connections</div>
+          </div>
+        </div>
+
+        <div class="stats">
+          <h3>📈 Test Progress</h3>
+          <div class="stat-item">
+            <span class="stat-label">Current Test:</span>
+            <span class="stat-value" id="current_test">Not Started</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Progress:</span>
+            <span class="stat-value" id="progress">0%</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Protocols Tested:</span>
+            <span class="stat-value" id="protocols_tested">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Scenarios Completed:</span>
+            <span class="stat-value" id="scenarios_completed">0</span>
+          </div>
+
+          <h3 id="current_route_section" style="display: block">
+            🎯 Current Route
+          </h3>
+          <div class="stat-item" id="route_info" style="display: flex">
+            <span class="stat-label">Source → Destination:</span>
+            <span class="stat-value" id="current_route">-</span>
+          </div>
+
+          <h3>⚡ Current Results</h3>
+          <div class="stat-item">
+            <span class="stat-label">Best Protocol:</span>
+            <span class="stat-value" id="live_best_protocol">-</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Best Delivery Rate:</span>
+            <span class="stat-value" id="live_best_delivery_rate">-</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Avg Delay (ms):</span>
+            <span class="stat-value" id="live_best_delay">-</span>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Report Modal -->
     <div id="reportModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>📊 MANET Protocol Testing Report</h2>
-                <button class="close" onclick="closeReport()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div id="reportContent">
-                    <!-- Report content will be dynamically generated -->
-                </div>
-            </div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>📊 MANET Protocol Testing Report</h2>
+          <button class="close" onclick="closeReport()">&times;</button>
         </div>
+        <div class="modal-body">
+          <div id="reportContent">
+            <!-- Report content will be dynamically generated -->
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Completion Alert -->
     <div id="completionAlert" class="completion-alert">
-        <h4>🎉 Simulation Complete!</h4>
-        <p>All protocol tests have finished successfully.</p>
-        <button onclick="showReport()">View Detailed Report</button>
+      <h4>🎉 Simulation Complete!</h4>
+      <p>All protocol tests have finished successfully.</p>
+      <button onclick="showReport()">View Detailed Report</button>
     </div>
 
     <script>
-        // Global variables
-        let testResults = [];
-        let testConfig = {};
-        let isTestRunning = false;
-        let testCompletionTime = null;
-        let canvas, ctx;
-        let nodes = [];
-        let connections = [];
-        let currentSource = null;
-        let currentDestination = null;
-        let animationFrameId = null;
-        let hoveredNode = null;
-        let nodeInfoElement = null;
+      // Global variables
+      let testResults = [];
+      let testConfig = {};
+      let isTestRunning = false;
+      let testCompletionTime = null;
+      let canvas, ctx;
+      let nodes = [];
+      let connections = [];
+      let currentSource = null;
+      let currentDestination = null;
+      let animationFrameId = null;
+      let hoveredNode = null;
+      let nodeInfoElement = null;
 
-        // Initialize application
-        document.addEventListener('DOMContentLoaded', function() {
-            // Initialize canvas
-            canvas = document.getElementById('simulationCanvas');
-            ctx = canvas.getContext('2d');
-            
-            // Set canvas dimensions to match container
-            const container = document.querySelector('.canvas-container');
-            canvas.width = container.clientWidth;
-            canvas.height = container.clientHeight;
-            
-            // Create node info element
-            nodeInfoElement = document.createElement('div');
-            nodeInfoElement.className = 'node-info';
-            nodeInfoElement.style.display = 'none';
-            document.querySelector('.canvas-container').appendChild(nodeInfoElement);
-            
-            // Add event listeners for mouse movement
-            canvas.addEventListener('mousemove', handleMouseMove);
-            canvas.addEventListener('mouseout', handleMouseOut);
-            
+      // Initialize application
+      document.addEventListener("DOMContentLoaded", function () {
+        // Initialize canvas
+        canvas = document.getElementById("simulationCanvas");
+        ctx = canvas.getContext("2d");
+
+        // Set canvas dimensions to match container
+        const container = document.querySelector(".canvas-container");
+        canvas.width = container.clientWidth;
+        canvas.height = container.clientHeight;
+
+        // Create node info element
+        nodeInfoElement = document.createElement("div");
+        nodeInfoElement.className = "node-info";
+        nodeInfoElement.style.display = "none";
+        document
+          .querySelector(".canvas-container")
+          .appendChild(nodeInfoElement);
+
+        // Add event listeners for mouse movement
+        canvas.addEventListener("mousemove", handleMouseMove);
+        canvas.addEventListener("mouseout", handleMouseOut);
+
+        updateNodeOptions();
+        toggleRouteSelection();
+
+        document
+          .getElementById("num_nodes")
+          .addEventListener("change", function () {
             updateNodeOptions();
-            toggleRouteSelection();
-            
-            document.getElementById('num_nodes').addEventListener('change', function() {
-                updateNodeOptions();
-            });
-            
-            // Initialize network visualization
-            initializeNetwork();
-        });
+          });
 
-        function handleMouseMove(event) {
-            if (!isTestRunning || nodes.length === 0) return;
-            
-            const rect = canvas.getBoundingClientRect();
-            const x = event.clientX - rect.left;
-            const y = event.clientY - rect.top;
-            
-            // Check if mouse is over any node
-            let foundNode = null;
-            for (const node of nodes) {
-                const distance = Math.sqrt(Math.pow(x - node.x, 2) + Math.pow(y - node.y, 2));
-                if (distance <= node.radius) {
-                    foundNode = node;
-                    break;
-                }
-            }
-            
-            // Update hover state
-            if (foundNode && foundNode !== hoveredNode) {
-                hoveredNode = foundNode;
-                highlightConnectedNodes(foundNode);
-                
-                // Show node info
-                showNodeInfo(foundNode, x, y);
-            } else if (!foundNode && hoveredNode) {
-                hoveredNode = null;
-                clearHighlights();
-                nodeInfoElement.style.display = 'none';
-            } else if (foundNode) {
-                // Update node info position
-                nodeInfoElement.style.left = (x + 10) + 'px';
-                nodeInfoElement.style.top = (y + 10) + 'px';
-            }
+        // Initialize network visualization
+        initializeNetwork();
+      });
+
+      function handleMouseMove(event) {
+        if (!isTestRunning || nodes.length === 0) return;
+
+        const rect = canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+
+        // Check if mouse is over any node
+        let foundNode = null;
+        for (const node of nodes) {
+          const distance = Math.sqrt(
+            Math.pow(x - node.x, 2) + Math.pow(y - node.y, 2)
+          );
+          if (distance <= node.radius) {
+            foundNode = node;
+            break;
+          }
         }
 
-        function handleMouseOut() {
-            if (hoveredNode) {
-                hoveredNode = null;
-                clearHighlights();
-                nodeInfoElement.style.display = 'none';
-            }
+        // Update hover state
+        if (foundNode && foundNode !== hoveredNode) {
+          hoveredNode = foundNode;
+          highlightConnectedNodes(foundNode);
+
+          // Show node info
+          showNodeInfo(foundNode, x, y);
+        } else if (!foundNode && hoveredNode) {
+          hoveredNode = null;
+          clearHighlights();
+          nodeInfoElement.style.display = "none";
+        } else if (foundNode) {
+          // Update node info position
+          nodeInfoElement.style.left = x + 10 + "px";
+          nodeInfoElement.style.top = y + 10 + "px";
+        }
+      }
+
+      function handleMouseOut() {
+        if (hoveredNode) {
+          hoveredNode = null;
+          clearHighlights();
+          nodeInfoElement.style.display = "none";
+        }
+      }
+
+      function highlightConnectedNodes(node) {
+        // Clear previous highlights
+        clearHighlights();
+
+        // Highlight the hovered node
+        node.highlighted = true;
+
+        // Highlight connected nodes and connections
+        for (const conn of connections) {
+          if (conn.node1 === node || conn.node2 === node) {
+            conn.highlighted = true;
+            const otherNode = conn.node1 === node ? conn.node2 : conn.node1;
+            otherNode.connected = true;
+          }
+        }
+      }
+
+      function clearHighlights() {
+        for (const node of nodes) {
+          node.highlighted = false;
+          node.connected = false;
         }
 
-        function highlightConnectedNodes(node) {
-            // Clear previous highlights
-            clearHighlights();
-            
-            // Highlight the hovered node
-            node.highlighted = true;
-            
-            // Highlight connected nodes and connections
-            for (const conn of connections) {
-                if (conn.node1 === node || conn.node2 === node) {
-                    conn.highlighted = true;
-                    const otherNode = conn.node1 === node ? conn.node2 : conn.node1;
-                    otherNode.connected = true;
-                }
-            }
+        for (const conn of connections) {
+          conn.highlighted = false;
+        }
+      }
+
+      function showNodeInfo(node, x, y) {
+        // Count connected nodes
+        let connectedCount = 0;
+        for (const conn of connections) {
+          if (conn.node1 === node || conn.node2 === node) {
+            connectedCount++;
+          }
         }
 
-        function clearHighlights() {
-            for (const node of nodes) {
-                node.highlighted = false;
-                node.connected = false;
-            }
-            
-            for (const conn of connections) {
-                conn.highlighted = false;
-            }
-        }
-
-        function showNodeInfo(node, x, y) {
-            // Count connected nodes
-            let connectedCount = 0;
-            for (const conn of connections) {
-                if (conn.node1 === node || conn.node2 === node) {
-                    connectedCount++;
-                }
-            }
-            
-            // Set node info content
-            nodeInfoElement.innerHTML = `
+        // Set node info content
+        nodeInfoElement.innerHTML = `
                 <h4>Node ${node.id}</h4>
                 <p><strong>Type:</strong> ${node.type.toUpperCase()}</p>
                 <p><strong>Connected to:</strong> ${connectedCount} nodes</p>
-                <p><strong>Position:</strong> (${Math.round(node.x)}, ${Math.round(node.y)})</p>
+                <p><strong>Position:</strong> (${Math.round(
+                  node.x
+                )}, ${Math.round(node.y)})</p>
             `;
-            
-            // Position and show the info element
-            nodeInfoElement.style.left = (x + 10) + 'px';
-            nodeInfoElement.style.top = (y + 10) + 'px';
-            nodeInfoElement.style.display = 'block';
+
+        // Position and show the info element
+        nodeInfoElement.style.left = x + 10 + "px";
+        nodeInfoElement.style.top = y + 10 + "px";
+        nodeInfoElement.style.display = "block";
+      }
+
+      function initializeNetwork() {
+        // Clear any existing animation
+        if (animationFrameId) {
+          cancelAnimationFrame(animationFrameId);
         }
 
-        function initializeNetwork() {
-            // Clear any existing animation
-            if (animationFrameId) {
-                cancelAnimationFrame(animationFrameId);
+        // Clear canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw background
+        ctx.fillStyle = "#f8f9fa";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Add text indicating no simulation is running
+        ctx.fillStyle = "#6c757d";
+        ctx.font = "16px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText(
+          "Network visualization will appear when simulation starts",
+          canvas.width / 2,
+          canvas.height / 2
+        );
+
+        document.getElementById("canvas_info").textContent = "Not started";
+        document.getElementById("hover_info").textContent =
+          "Hover over a node to see connections";
+      }
+
+      function updateNodeOptions() {
+        const nodeCount = parseInt(document.getElementById("num_nodes").value);
+        const sourceSelect = document.getElementById("source_node");
+        const destinationSelect = document.getElementById("destination_node");
+
+        sourceSelect.innerHTML = '<option value="">Select Source Node</option>';
+        destinationSelect.innerHTML =
+          '<option value="">Select Destination Node</option>';
+
+        for (let i = 1; i <= nodeCount; i++) {
+          sourceSelect.innerHTML += `<option value="${i}">Node ${i}</option>`;
+          destinationSelect.innerHTML += `<option value="${i}">Node ${i}</option>`;
+        }
+      }
+
+      function updateDestinationOptions() {
+        const sourceValue = document.getElementById("source_node").value;
+        const destinationSelect = document.getElementById("destination_node");
+        const nodeCount = parseInt(document.getElementById("num_nodes").value);
+
+        destinationSelect.innerHTML =
+          '<option value="">Select Destination Node</option>';
+
+        for (let i = 1; i <= nodeCount; i++) {
+          if (i.toString() !== sourceValue) {
+            destinationSelect.innerHTML += `<option value="${i}">Node ${i}</option>`;
+          }
+        }
+      }
+
+      function toggleRouteSelection() {
+        const checkbox = document.getElementById("enable_route_selection");
+        const routeOptions = document.getElementById("route_options");
+        const routeInfo = document.getElementById("route_info");
+        const routeSection = document.getElementById("current_route_section");
+
+        if (checkbox.checked) {
+          routeOptions.classList.remove("disabled");
+          routeInfo.style.display = "flex";
+          routeSection.style.display = "block";
+        } else {
+          routeOptions.classList.add("disabled");
+          routeInfo.style.display = "none";
+          routeSection.style.display = "none";
+          document.getElementById("source_node").value = "";
+          document.getElementById("destination_node").value = "";
+        }
+      }
+
+      function startAutoTest() {
+        if (isTestRunning) return;
+
+        // Validate configuration
+        if (!validateConfiguration()) return;
+
+        // Collect configuration
+        testConfig = getTestConfiguration();
+
+        // Initialize test state
+        isTestRunning = true;
+        testResults = [];
+
+        // Update UI
+        updateUIForTestStart();
+
+        // Initialize and draw network
+        initializeNetworkVisualization();
+
+        // Start simulation
+        executeSimulation();
+      }
+
+      function initializeNetworkVisualization() {
+        // Clear previous nodes and connections
+        nodes = [];
+        connections = [];
+
+        const numNodes = testConfig.num_nodes;
+        const areaWidth = canvas.width - 40; // Padding
+        const areaHeight = canvas.height - 40; // Padding
+        const transmissionRange = testConfig.transmission_range;
+
+        // Create nodes with random positions
+        for (let i = 0; i < numNodes; i++) {
+          const x = 20 + Math.random() * areaWidth;
+          const y = 20 + Math.random() * areaHeight;
+
+          nodes.push({
+            id: i + 1,
+            x: x,
+            y: y,
+            radius: 15,
+            type: "normal",
+            highlighted: false,
+            connected: false,
+            // Add for mobility:
+            destX: 20 + Math.random() * areaWidth,
+            destY: 20 + Math.random() * areaHeight,
+            speed: 1 + Math.random() * 2, // 1-3 px/frame
+          });
+        }
+
+        // Set source and destination if specified
+        if (
+          testConfig.enable_route_selection &&
+          testConfig.source_node &&
+          testConfig.destination_node
+        ) {
+          currentSource = testConfig.source_node;
+          currentDestination = testConfig.destination_node;
+
+          // Mark source and destination nodes
+          nodes[testConfig.source_node - 1].type = "source";
+          nodes[testConfig.destination_node - 1].type = "destination";
+        } else {
+          // Random source and destination for each scenario
+          currentSource = Math.floor(Math.random() * numNodes) + 1;
+          currentDestination = Math.floor(Math.random() * numNodes) + 1;
+
+          // Make sure source and destination are different
+          while (currentDestination === currentSource) {
+            currentDestination = Math.floor(Math.random() * numNodes) + 1;
+          }
+
+          // Mark source and destination nodes
+          nodes[currentSource - 1].type = "source";
+          nodes[currentDestination - 1].type = "destination";
+        }
+
+        // Create connections based on transmission range
+        for (let i = 0; i < numNodes; i++) {
+          for (let j = i + 1; j < numNodes; j++) {
+            const node1 = nodes[i];
+            const node2 = nodes[j];
+            const distance = Math.sqrt(
+              Math.pow(node2.x - node1.x, 2) + Math.pow(node2.y - node1.y, 2)
+            );
+
+            if (
+              distance <=
+              transmissionRange * (areaWidth / testConfig.area_width)
+            ) {
+              connections.push({
+                node1: node1,
+                node2: node2,
+                active: false,
+                highlighted: false,
+              });
             }
-            
-            // Clear canvas
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // Draw background
-            ctx.fillStyle = '#f8f9fa';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // Add text indicating no simulation is running
-            ctx.fillStyle = '#6c757d';
-            ctx.font = '16px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText('Network visualization will appear when simulation starts', canvas.width / 2, canvas.height / 2);
-            
-            document.getElementById('canvas_info').textContent = 'Not started';
-            document.getElementById('hover_info').textContent = 'Hover over a node to see connections';
+          }
         }
 
-        function updateNodeOptions() {
-            const nodeCount = parseInt(document.getElementById('num_nodes').value);
-            const sourceSelect = document.getElementById('source_node');
-            const destinationSelect = document.getElementById('destination_node');
-            
-            sourceSelect.innerHTML = '<option value="">Select Source Node</option>';
-            destinationSelect.innerHTML = '<option value="">Select Destination Node</option>';
-            
-            for (let i = 1; i <= nodeCount; i++) {
-                sourceSelect.innerHTML += `<option value="${i}">Node ${i}</option>`;
-                destinationSelect.innerHTML += `<option value="${i}">Node ${i}</option>`;
+        // Start animation
+        animateNetwork();
+
+        document.getElementById(
+          "canvas_info"
+        ).textContent = `Nodes: ${numNodes}, Range: ${transmissionRange}m, Model: ${testConfig.mobility_model}`;
+        document.getElementById("hover_info").textContent =
+          "Hover over a node to see connections";
+      }
+
+      function updateSourceDestinationUI(sourceId, destinationId) {
+        // Update node types
+        nodes.forEach((node) => {
+          if (node.id === sourceId) {
+            node.type = "source";
+          } else if (node.id === destinationId) {
+            node.type = "destination";
+          } else {
+            node.type = "normal";
+          }
+        });
+
+        // Update current source and destination tracking
+        currentSource = sourceId;
+        currentDestination = destinationId;
+
+        // Also update the UI text for the current route if it's random
+        if (!testConfig.enable_route_selection) {
+          document.getElementById(
+            "current_route"
+          ).textContent = `Node ${sourceId} → Node ${destinationId}`;
+        }
+      }
+
+      function animateNetwork() {
+        // Clear canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw background
+        ctx.fillStyle = "#f8f9fa";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Draw connections
+        connections.forEach((conn) => {
+          ctx.beginPath();
+          ctx.moveTo(conn.node1.x, conn.node1.y);
+          ctx.lineTo(conn.node2.x, conn.node2.y);
+
+          if (conn.highlighted) {
+            ctx.strokeStyle = "#ffc107";
+            ctx.lineWidth = 3;
+          } else if (conn.active) {
+            ctx.strokeStyle = "#28a745";
+            ctx.lineWidth = 2;
+          } else {
+            ctx.strokeStyle = "#6c757d";
+            ctx.lineWidth = 1;
+          }
+
+          ctx.stroke();
+        });
+
+        // Draw nodes
+        nodes.forEach((node) => {
+          ctx.beginPath();
+          ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
+
+          if (node.highlighted) {
+            ctx.fillStyle = "#ffc107";
+          } else if (node.connected) {
+            ctx.fillStyle = "#17a2b8";
+          } else {
+            switch (node.type) {
+              case "source":
+                ctx.fillStyle = "#28a745";
+                break;
+              case "destination":
+                ctx.fillStyle = "#dc3545";
+                break;
+              default:
+                ctx.fillStyle = "#4facfe";
             }
-        }
+          }
 
-        function updateDestinationOptions() {
-            const sourceValue = document.getElementById('source_node').value;
-            const destinationSelect = document.getElementById('destination_node');
-            const nodeCount = parseInt(document.getElementById('num_nodes').value);
-            
-            destinationSelect.innerHTML = '<option value="">Select Destination Node</option>';
-            
-            for (let i = 1; i <= nodeCount; i++) {
-                if (i.toString() !== sourceValue) {
-                    destinationSelect.innerHTML += `<option value="${i}">Node ${i}</option>`;
-                }
-            }
-        }
+          ctx.fill();
 
-        function toggleRouteSelection() {
-            const checkbox = document.getElementById('enable_route_selection');
-            const routeOptions = document.getElementById('route_options');
-            const routeInfo = document.getElementById('route_info');
-            const routeSection = document.getElementById('current_route_section');
-            
-            if (checkbox.checked) {
-                routeOptions.classList.remove('disabled');
-                routeInfo.style.display = 'flex';
-                routeSection.style.display = 'block';
-            } else {
-                routeOptions.classList.add('disabled');
-                routeInfo.style.display = 'none';
-                routeSection.style.display = 'none';
-                document.getElementById('source_node').value = '';
-                document.getElementById('destination_node').value = '';
-            }
-        }
+          // Draw node ID
+          ctx.fillStyle = "white";
+          ctx.font = "12px Arial";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(node.id, node.x, node.y);
 
-        function startAutoTest() {
-            if (isTestRunning) return;
+          // Draw highlight ring for hovered node
+          if (node.highlighted) {
+            ctx.beginPath();
+            ctx.arc(node.x, node.y, node.radius + 5, 0, Math.PI * 2);
+            ctx.strokeStyle = "#ffc107";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+          }
+        });
 
-            // Validate configuration
-            if (!validateConfiguration()) return;
+        // Continue animation if test is running
+        if (isTestRunning) {
+          // Randomly activate some connections for visual effect
+          if (Math.random() < 0.05) {
+            const randomConn =
+              connections[Math.floor(Math.random() * connections.length)];
+            randomConn.active = true;
 
-            // Collect configuration
-            testConfig = getTestConfiguration();
-            
-            // Initialize test state
-            isTestRunning = true;
-            testResults = [];
-            
-            // Update UI
-            updateUIForTestStart();
-            
-            // Initialize and draw network
-            initializeNetworkVisualization();
-            
-            // Start simulation
-            executeSimulation();
-        }
-
-        function initializeNetworkVisualization() {
-            // Clear previous nodes and connections
-            nodes = [];
-            connections = [];
-            
-            const numNodes = testConfig.num_nodes;
-            const areaWidth = canvas.width - 40; // Padding
-            const areaHeight = canvas.height - 40; // Padding
-            const transmissionRange = testConfig.transmission_range;
-            
-            // Create nodes with random positions
-            for (let i = 0; i < numNodes; i++) {
-                const x = 20 + Math.random() * areaWidth;
-                const y = 20 + Math.random() * areaHeight;
-            
-                nodes.push({
-                    id: i + 1,
-                    x: x,
-                    y: y,
-                    radius: 15,
-                    type: 'normal',
-                    highlighted: false,
-                    connected: false,
-                    // Add for mobility:
-                    destX: 20 + Math.random() * areaWidth,
-                    destY: 20 + Math.random() * areaHeight,
-                    speed: 1 + Math.random() * 2 // 1-3 px/frame
-                });
-            }
-
-            
-            // Set source and destination if specified
-            if (testConfig.enable_route_selection && testConfig.source_node && testConfig.destination_node) {
-                currentSource = testConfig.source_node;
-                currentDestination = testConfig.destination_node;
-                
-                // Mark source and destination nodes
-                nodes[testConfig.source_node - 1].type = 'source';
-                nodes[testConfig.destination_node - 1].type = 'destination';
-            } else {
-                // Random source and destination for each scenario
-                currentSource = Math.floor(Math.random() * numNodes) + 1;
-                currentDestination = Math.floor(Math.random() * numNodes) + 1;
-                
-                // Make sure source and destination are different
-                while (currentDestination === currentSource) {
-                    currentDestination = Math.floor(Math.random() * numNodes) + 1;
-                }
-                
-                // Mark source and destination nodes
-                nodes[currentSource - 1].type = 'source';
-                nodes[currentDestination - 1].type = 'destination';
-            }
-            
-            // Create connections based on transmission range
-            for (let i = 0; i < numNodes; i++) {
-                for (let j = i + 1; j < numNodes; j++) {
-                    const node1 = nodes[i];
-                    const node2 = nodes[j];
-                    const distance = Math.sqrt(Math.pow(node2.x - node1.x, 2) + Math.pow(node2.y - node1.y, 2));
-                    
-                    if (distance <= transmissionRange * (areaWidth / testConfig.area_width)) {
-                        connections.push({
-                            node1: node1,
-                            node2: node2,
-                            active: false,
-                            highlighted: false
-                        });
-                    }
-                }
-            }
-            
-            // Start animation
-            animateNetwork();
-            
-            document.getElementById('canvas_info').textContent = 
-                `Nodes: ${numNodes}, Range: ${transmissionRange}m, Model: ${testConfig.mobility_model}`;
-            document.getElementById('hover_info').textContent = 'Hover over a node to see connections';
-        }
-
-        function updateSourceDestinationUI(sourceId, destinationId) {
-            nodes.forEach(node => {
-                if (node.id === sourceId) {
-                    node.type = 'source';
-                } else if (node.id === destinationId) {
-                    node.type = 'destination';
-                } else {
-                    node.type = 'normal';
-                }
-            });
-
-            // Also update the UI text for the current route if it's random
-            if (!testConfig.enable_route_selection) {
-                document.getElementById('current_route').textContent = 
-                    `Node ${sourceId} → Node ${destinationId}`;
-            }
-        }
-
-        function animateNetwork() {
-            // Clear canvas
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // Draw background
-            ctx.fillStyle = '#f8f9fa';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // Draw connections
-            connections.forEach(conn => {
-                ctx.beginPath();
-                ctx.moveTo(conn.node1.x, conn.node1.y);
-                ctx.lineTo(conn.node2.x, conn.node2.y);
-                
-                if (conn.highlighted) {
-                    ctx.strokeStyle = '#ffc107';
-                    ctx.lineWidth = 3;
-                } else if (conn.active) {
-                    ctx.strokeStyle = '#28a745';
-                    ctx.lineWidth = 2;
-                } else {
-                    ctx.strokeStyle = '#6c757d';
-                    ctx.lineWidth = 1;
-                }
-                
-                ctx.stroke();
-            });
-            
-            // Draw nodes
-            nodes.forEach(node => {
-                ctx.beginPath();
-                ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
-                
-                if (node.highlighted) {
-                    ctx.fillStyle = '#ffc107';
-                } else if (node.connected) {
-                    ctx.fillStyle = '#17a2b8';
-                } else {
-                    switch (node.type) {
-                        case 'source':
-                            ctx.fillStyle = '#28a745';
-                            break;
-                        case 'destination':
-                            ctx.fillStyle = '#dc3545';
-                            break;
-                        default:
-                            ctx.fillStyle = '#4facfe';
-                    }
-                }
-                
-                ctx.fill();
-                
-                // Draw node ID
-                ctx.fillStyle = 'white';
-                ctx.font = '12px Arial';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(node.id, node.x, node.y);
-                
-                // Draw highlight ring for hovered node
-                if (node.highlighted) {
-                    ctx.beginPath();
-                    ctx.arc(node.x, node.y, node.radius + 5, 0, Math.PI * 2);
-                    ctx.strokeStyle = '#ffc107';
-                    ctx.lineWidth = 2;
-                    ctx.stroke();
-                }
-            });
-            
-            // Continue animation if test is running
-            if (isTestRunning) {
-                // Randomly activate some connections for visual effect
-                if (Math.random() < 0.05) {
-                    const randomConn = connections[Math.floor(Math.random() * connections.length)];
-                    randomConn.active = true;
-                    
-                    setTimeout(() => {
-                        randomConn.active = false;
-                    }, 500);
-                }
-                
-                // Move nodes if mobility model is not static
-                if (testConfig.mobility_model !== 'static') {
-                    nodes.forEach(node => {
-                        if (node.type === 'normal') {
-                            // Move toward destination
-                            const dx = node.destX - node.x;
-                            const dy = node.destY - node.y;
-                            const dist = Math.sqrt(dx * dx + dy * dy);
-                            if (dist < node.speed) {
-                                // Arrived: pick new destination
-                                node.destX = 20 + Math.random() * (canvas.width - 40);
-                                node.destY = 20 + Math.random() * (canvas.height - 40);
-                                node.speed = 1 + Math.random() * 2;
-                            } else {
-                                node.x += (dx / dist) * node.speed;
-                                node.y += (dy / dist) * node.speed;
-                            }
-                            // Keep within bounds
-                            node.x = Math.max(20, Math.min(canvas.             width - 20, node.x));
-                            node.y = Math.max(20, Math.min(canvas.             height - 20, node.y));
-                        }
-                    });
-                }
-                
-                animationFrameId = requestAnimationFrame(animateNetwork);
-            }
-        }
-
-        function validateConfiguration() {
-            const enableRouteSelection = document.getElementById('enable_route_selection').checked;
-            const sourceNode = document.getElementById('source_node').value;
-            const destinationNode = document.getElementById('destination_node').value;
-            const selectedProtocols = getSelectedProtocols();
-
-            if (enableRouteSelection && (!sourceNode || !destinationNode)) {
-                alert('Please select both source and destination nodes, or disable route selection.');
-                return false;
-            }
-
-            if (selectedProtocols.length === 0) {
-                alert('Please select at least one protocol to test.');
-                return false;
-            }
-
-            return true;
-        }
-
-        function getTestConfiguration() {
-            const enableRouteSelection = document.getElementById('enable_route_selection').checked;
-            
-            return {
-                num_nodes: parseInt(document.getElementById('num_nodes').value),
-                area_width: parseInt(document.getElementById('area_width').value),
-                area_height: parseInt(document.getElementById('area_height').value),
-                transmission_range: parseInt(document.getElementById('transmission_range').value),
-                num_scenarios: parseInt(document.getElementById('num_scenarios').value),
-                simulation_time: parseInt(document.getElementById('simulation_time').value),
-                mobility_model: document.getElementById('mobility_model').value,
-                packet_rate: parseFloat(document.getElementById('packet_rate').value),
-                protocols: getSelectedProtocols(),
-                enable_route_selection: enableRouteSelection,
-                source_node: enableRouteSelection ? parseInt(document.getElementById('source_node').value) : null,
-                destination_node: enableRouteSelection ? parseInt(document.getElementById('destination_node').value) : null
-            };
-        }
-
-        function getSelectedProtocols() {
-            const protocols = [];
-            if (document.getElementById('aodv').checked) protocols.push('AODV');
-            if (document.getElementById('dsdv').checked) protocols.push('DSDV');
-            if (document.getElementById('dsr').checked) protocols.push('DSR');
-            if (document.getElementById('olsr').checked) protocols.push('OLSR');
-            return protocols;
-        }
-
-        function updateUIForTestStart() {
-            document.getElementById('start_test').disabled = true;
-            document.getElementById('stop_test').disabled = false;
-            document.getElementById('view_report').disabled = true;
-            document.getElementById('current_test').textContent = 'Initializing...';
-            document.getElementById('progress').textContent = '0%';
-            document.getElementById('protocols_tested').textContent = '0';
-            document.getElementById('scenarios_completed').textContent = '0';
-
-            // Update route display
-            if (testConfig.enable_route_selection) {
-                document.getElementById('current_route').textContent = 
-                    `Node ${testConfig.source_node} → Node ${testConfig.destination_node}`;
-            } else {
-                document.getElementById('current_route').textContent = 'Random pairs per scenario';
-            }
-        }
-
-        async function executeSimulation() {
-            try {
-                // Make API call to start simulation
-                const response = await fetch('/api/start_simulation', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(testConfig)
-                });
-
-                if (!response.ok) {
-                    throw new Error('Failed to start simulation');
-                }
-
-                // Start polling for progress updates
-                pollSimulationProgress();
-                
-            } catch (error) {
-                console.error('Simulation start error:', error);
-                // Fallback to demo mode for now
-                runDemoSimulation();
-            }
-        }
-
-        // Demo simulation for testing (replace with actual API calls)
-function runDemoSimulation() {
-            let currentScenario = 0;
-            let currentProtocol = 0;
-            const protocols = testConfig.protocols;
-            const totalScenarios = testConfig.num_scenarios;
-            const totalTests = protocols.length * totalScenarios;
-            let completedTests = 0;
-
-            const interval = setInterval(() => {
-                if (!isTestRunning) {
-                    clearInterval(interval);
-                    return;
-                }
-
-                // Update progress
-                completedTests++;
-                const progress = Math.floor((completedTests / totalTests) * 100);
-                
-                document.getElementById('current_test').textContent = 
-                    `${protocols[currentProtocol]} - Scenario ${currentScenario + 1}`;
-                document.getElementById('progress').textContent = `${progress}%`;
-                document.getElementById('protocols_tested').textContent = protocols.length;
-                document.getElementById('scenarios_completed').textContent = 
-                    Math.floor(completedTests / protocols.length);
-
-                // ✨ --- START OF NEW CODE --- ✨
-                // Update the UI for the new scenario when its first protocol starts
-                if (currentProtocol === 0) {
-                    if (!testConfig.enable_route_selection) {
-                        // Pick new random source/destination for each scenario
-                        const numNodes = testConfig.num_nodes;
-                        let src = Math.floor(Math.random() * numNodes) + 1;
-                        let dst = Math.floor(Math.random() * numNodes) + 1;
-                        while (dst === src) {
-                            dst = Math.floor(Math.random() * numNodes) + 1;
-                        }
-                        updateSourceDestinationUI(src, dst);
-                    } else {
-                        // Use the fixed source/destination for all scenarios
-                        updateSourceDestinationUI(testConfig.source_node, testConfig.destination_node);
-                    }
-                }
-                // ✨ --- END OF NEW CODE --- ✨
-
-                // Generate demo results
-                const result = generateDemoResult(protocols[currentProtocol], currentScenario);
-                testResults.push(result);
-
-                // Update live stats
-                updateLiveStats();
-
-                // Move to next test
-                currentProtocol++;
-                if (currentProtocol >= protocols.length) {
-                    currentProtocol = 0;
-                    currentScenario++;
-                }
-
-                // Check completion
-                if (completedTests >= totalTests) {
-                    clearInterval(interval);
-                    completeSimulation();
-                }
-            }, 1000); // 1 second per test for demo
-        }
-
-        function generateDemoResult(protocol, scenario) {
-            const baseMetrics = {
-                'AODV': { delivery: 0.85, delay: 45, overhead: 0.12, throughput: 850 },
-                'DSDV': { delivery: 0.78, delay: 38, overhead: 0.18, throughput: 780 },
-                'DSR': { delivery: 0.82, delay: 52, overhead: 0.15, throughput: 820 },
-                'OLSR': { delivery: 0.88, delay: 41, overhead: 0.22, throughput: 880 }
-            };
-
-            const base = baseMetrics[protocol];
-            const variation = 0.1; // 10% variation
-
-            return {
-                protocol: protocol,
-                scenario: scenario,
-                timestamp: new Date().toISOString(),
-                metrics: {
-                    packet_delivery_ratio: base.delivery + (Math.random() - 0.5) * variation,
-                    average_delay: base.delay + (Math.random() - 0.5) * base.delay * variation,
-                    routing_overhead: base.overhead + (Math.random() - 0.5) * variation * 0.5,
-                    throughput: base.throughput + (Math.random() - 0.5) * base.throughput * variation,
-                    energy_consumption: 50 + Math.random() * 30,
-                    route_discovery_time: 10 + Math.random() * 15
-                },
-                route_info: testConfig.enable_route_selection ? {
-                    source: testConfig.source_node,
-                    destination: testConfig.destination_node,
-                    fixed_route: true
-                } : {
-                    source: Math.floor(Math.random() * testConfig.num_nodes) + 1,
-                    destination: Math.floor(Math.random() * testConfig.num_nodes) + 1,
-                    fixed_route: false
-                }
-            };
-        }
-
-        function updateLiveStats() {
-            if (testResults.length === 0) return;
-
-            // Calculate best protocol so far
-            const protocolAverages = {};
-            
-            testResults.forEach(result => {
-                if (!protocolAverages[result.protocol]) {
-                    protocolAverages[result.protocol] = {
-                        delivery_sum: 0,
-                        delay_sum: 0,
-                        count: 0
-                    };
-                }
-                
-                protocolAverages[result.protocol].delivery_sum += result.metrics.packet_delivery_ratio;
-                protocolAverages[result.protocol].delay_sum += result.metrics.average_delay;
-                protocolAverages[result.protocol].count++;
-            });
-
-            let bestProtocol = '';
-            let bestDeliveryRate = 0;
-            let bestDelay = Infinity;
-
-            Object.keys(protocolAverages).forEach(protocol => {
-                const avg = protocolAverages[protocol];
-                const avgDelivery = avg.delivery_sum / avg.count;
-                const avgDelay = avg.delay_sum / avg.count;
-                
-                if (avgDelivery > bestDeliveryRate) {
-                    bestProtocol = protocol;
-                    bestDeliveryRate = avgDelivery;
-                    bestDelay = avgDelay;
-                }
-            });
-
-            document.getElementById('live_best_protocol').textContent = bestProtocol || '-';
-            document.getElementById('live_best_delivery_rate').textContent = 
-                bestDeliveryRate ? `${(bestDeliveryRate * 100).toFixed(1)}%` : '-';
-            document.getElementById('live_best_delay').textContent = 
-                bestDelay !== Infinity ? `${bestDelay.toFixed(2)}` : '-';
-        }
-
-        function completeSimulation() {
-            isTestRunning = false;
-            testCompletionTime = new Date().toISOString();
-            
-            // Stop animation
-            if (animationFrameId) {
-                cancelAnimationFrame(animationFrameId);
-            }
-            
-            // Update UI
-            document.getElementById('start_test').disabled = false;
-            document.getElementById('stop_test').disabled = true;
-            document.getElementById('view_report').disabled = false;
-            document.getElementById('current_test').textContent = 'Completed';
-            document.getElementById('progress').textContent = '100%';
-            
-            // Show completion alert
-            showCompletionAlert();
-        }
-
-        function showCompletionAlert() {
-            const alert = document.getElementById('completionAlert');
-            alert.classList.add('show');
-            
-            // Auto-hide after 10 seconds
             setTimeout(() => {
-                alert.classList.remove('show');
-            }, 10000);
+              randomConn.active = false;
+            }, 500);
+          }
+
+          // Move nodes if mobility model is not static
+          if (testConfig.mobility_model !== "static") {
+            nodes.forEach((node) => {
+              // All nodes can move, including source and destination
+              const dx = node.destX - node.x;
+              const dy = node.destY - node.y;
+              const dist = Math.sqrt(dx * dx + dy * dy);
+              if (dist < node.speed) {
+                // Arrived: pick new destination
+                node.destX = 20 + Math.random() * (canvas.width - 40);
+                node.destY = 20 + Math.random() * (canvas.height - 40);
+                node.speed = 1 + Math.random() * 2;
+              } else {
+                node.x += (dx / dist) * node.speed;
+                node.y += (dy / dist) * node.speed;
+              }
+              // Keep within bounds
+              node.x = Math.max(20, Math.min(canvas.width - 20, node.x));
+              node.y = Math.max(20, Math.min(canvas.height - 20, node.y));
+            });
+          }
+
+          animationFrameId = requestAnimationFrame(animateNetwork);
+        }
+      }
+
+      function validateConfiguration() {
+        const enableRouteSelection = document.getElementById(
+          "enable_route_selection"
+        ).checked;
+        const sourceNode = document.getElementById("source_node").value;
+        const destinationNode =
+          document.getElementById("destination_node").value;
+        const selectedProtocols = getSelectedProtocols();
+
+        if (enableRouteSelection && (!sourceNode || !destinationNode)) {
+          alert(
+            "Please select both source and destination nodes, or disable route selection."
+          );
+          return false;
         }
 
-        function stopTest() {
-            isTestRunning = false;
-            
-            // Stop animation
-            if (animationFrameId) {
-                cancelAnimationFrame(animationFrameId);
+        if (selectedProtocols.length === 0) {
+          alert("Please select at least one protocol to test.");
+          return false;
+        }
+
+        return true;
+      }
+
+      function getTestConfiguration() {
+        const enableRouteSelection = document.getElementById(
+          "enable_route_selection"
+        ).checked;
+
+        return {
+          num_nodes: parseInt(document.getElementById("num_nodes").value),
+          area_width: parseInt(document.getElementById("area_width").value),
+          area_height: parseInt(document.getElementById("area_height").value),
+          transmission_range: parseInt(
+            document.getElementById("transmission_range").value
+          ),
+          num_scenarios: parseInt(
+            document.getElementById("num_scenarios").value
+          ),
+          simulation_time: parseInt(
+            document.getElementById("simulation_time").value
+          ),
+          mobility_model: document.getElementById("mobility_model").value,
+          packet_rate: parseFloat(document.getElementById("packet_rate").value),
+          protocols: getSelectedProtocols(),
+          enable_route_selection: enableRouteSelection,
+          source_node: enableRouteSelection
+            ? parseInt(document.getElementById("source_node").value)
+            : null,
+          destination_node: enableRouteSelection
+            ? parseInt(document.getElementById("destination_node").value)
+            : null,
+        };
+      }
+
+      function getSelectedProtocols() {
+        const protocols = [];
+        if (document.getElementById("aodv").checked) protocols.push("AODV");
+        if (document.getElementById("dsdv").checked) protocols.push("DSDV");
+        if (document.getElementById("dsr").checked) protocols.push("DSR");
+        if (document.getElementById("olsr").checked) protocols.push("OLSR");
+        return protocols;
+      }
+
+      function updateUIForTestStart() {
+        document.getElementById("start_test").disabled = true;
+        document.getElementById("stop_test").disabled = false;
+        document.getElementById("view_report").disabled = true;
+        document.getElementById("current_test").textContent = "Initializing...";
+        document.getElementById("progress").textContent = "0%";
+        document.getElementById("protocols_tested").textContent = "0";
+        document.getElementById("scenarios_completed").textContent = "0";
+
+        // Show route section
+        const routeSection = document.getElementById("current_route_section");
+        const routeInfo = document.getElementById("route_info");
+        if (routeSection && routeInfo) {
+          routeSection.style.display = "block";
+          routeInfo.style.display = "flex";
+        }
+
+        // Update route display
+        if (testConfig.enable_route_selection) {
+          document.getElementById(
+            "current_route"
+          ).textContent = `Node ${testConfig.source_node} → Node ${testConfig.destination_node}`;
+        } else {
+          document.getElementById("current_route").textContent =
+            "Random pairs per scenario";
+        }
+      }
+
+      async function executeSimulation() {
+        try {
+          // Make API call to start simulation
+          const response = await fetch("/api/start_simulation", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(testConfig),
+          });
+
+          if (!response.ok) {
+            throw new Error("Failed to start simulation");
+          }
+
+          // Start polling for progress updates
+          pollSimulationProgress();
+        } catch (error) {
+          console.error("Simulation start error:", error);
+          // Fallback to demo mode for now
+          runDemoSimulation();
+        }
+      }
+
+      // Demo simulation for testing (replace with actual API calls)
+      function runDemoSimulation() {
+        let currentScenario = 0;
+        let currentProtocol = 0;
+        const protocols = testConfig.protocols;
+        const totalScenarios = testConfig.num_scenarios;
+        const totalTests = protocols.length * totalScenarios;
+        let completedTests = 0;
+
+        const interval = setInterval(() => {
+          if (!isTestRunning) {
+            clearInterval(interval);
+            return;
+          }
+
+          // Update progress
+          completedTests++;
+          const progress = Math.floor((completedTests / totalTests) * 100);
+
+          document.getElementById("current_test").textContent = `${
+            protocols[currentProtocol]
+          } - Scenario ${currentScenario + 1}`;
+          document.getElementById("progress").textContent = `${progress}%`;
+          document.getElementById("protocols_tested").textContent =
+            protocols.length;
+          document.getElementById("scenarios_completed").textContent =
+            Math.floor(completedTests / protocols.length);
+
+          // Update the UI for the new scenario when its first protocol starts
+          if (currentProtocol === 0) {
+            if (!testConfig.enable_route_selection) {
+              // Pick new random source/destination for each scenario
+              const numNodes = testConfig.num_nodes;
+              let src = Math.floor(Math.random() * numNodes) + 1;
+              let dst = Math.floor(Math.random() * numNodes) + 1;
+              while (dst === src) {
+                dst = Math.floor(Math.random() * numNodes) + 1;
+              }
+              updateSourceDestinationUI(src, dst);
+
+              // Update the current route display
+              document.getElementById(
+                "current_route"
+              ).textContent = `Node ${src} → Node ${dst}`;
+            } else {
+              // Use the fixed source/destination for all scenarios
+              updateSourceDestinationUI(
+                testConfig.source_node,
+                testConfig.destination_node
+              );
             }
-            
-            document.getElementById('start_test').disabled = false;
-            document.getElementById('stop_test').disabled = true;
-            document.getElementById('current_test').textContent = 'Stopped';
+          }
+
+          // Generate demo results
+          const result = generateDemoResult(
+            protocols[currentProtocol],
+            currentScenario
+          );
+          testResults.push(result);
+
+          // Update live stats
+          updateLiveStats();
+
+          // Move to next test
+          currentProtocol++;
+          if (currentProtocol >= protocols.length) {
+            currentProtocol = 0;
+            currentScenario++;
+          }
+
+          // Check completion
+          if (completedTests >= totalTests) {
+            clearInterval(interval);
+            completeSimulation();
+          }
+        }, 1000); // 1 second per test for demo
+      }
+
+      function generateDemoResult(protocol, scenario) {
+        const baseMetrics = {
+          AODV: { delivery: 0.85, delay: 45, overhead: 0.12, throughput: 850 },
+          DSDV: { delivery: 0.78, delay: 38, overhead: 0.18, throughput: 780 },
+          DSR: { delivery: 0.82, delay: 52, overhead: 0.15, throughput: 820 },
+          OLSR: { delivery: 0.88, delay: 41, overhead: 0.22, throughput: 880 },
+        };
+
+        const base = baseMetrics[protocol];
+        const variation = 0.1; // 10% variation
+
+        return {
+          protocol: protocol,
+          scenario: scenario,
+          timestamp: new Date().toISOString(),
+          metrics: {
+            packet_delivery_ratio:
+              base.delivery + (Math.random() - 0.5) * variation,
+            average_delay:
+              base.delay + (Math.random() - 0.5) * base.delay * variation,
+            routing_overhead:
+              base.overhead + (Math.random() - 0.5) * variation * 0.5,
+            throughput:
+              base.throughput +
+              (Math.random() - 0.5) * base.throughput * variation,
+            energy_consumption: 50 + Math.random() * 30,
+            route_discovery_time: 10 + Math.random() * 15,
+          },
+          route_info: testConfig.enable_route_selection
+            ? {
+                source: testConfig.source_node,
+                destination: testConfig.destination_node,
+                fixed_route: true,
+              }
+            : {
+                source: Math.floor(Math.random() * testConfig.num_nodes) + 1,
+                destination:
+                  Math.floor(Math.random() * testConfig.num_nodes) + 1,
+                fixed_route: false,
+              },
+        };
+      }
+
+      function updateLiveStats() {
+        if (testResults.length === 0) return;
+
+        // Calculate best protocol so far
+        const protocolAverages = {};
+
+        testResults.forEach((result) => {
+          if (!protocolAverages[result.protocol]) {
+            protocolAverages[result.protocol] = {
+              delivery_sum: 0,
+              delay_sum: 0,
+              count: 0,
+            };
+          }
+
+          protocolAverages[result.protocol].delivery_sum +=
+            result.metrics.packet_delivery_ratio;
+          protocolAverages[result.protocol].delay_sum +=
+            result.metrics.average_delay;
+          protocolAverages[result.protocol].count++;
+        });
+
+        let bestProtocol = "";
+        let bestDeliveryRate = 0;
+        let bestDelay = Infinity;
+
+        Object.keys(protocolAverages).forEach((protocol) => {
+          const avg = protocolAverages[protocol];
+          const avgDelivery = avg.delivery_sum / avg.count;
+          const avgDelay = avg.delay_sum / avg.count;
+
+          if (avgDelivery > bestDeliveryRate) {
+            bestProtocol = protocol;
+            bestDeliveryRate = avgDelivery;
+            bestDelay = avgDelay;
+          }
+        });
+
+        document.getElementById("live_best_protocol").textContent =
+          bestProtocol || "-";
+        document.getElementById("live_best_delivery_rate").textContent =
+          bestDeliveryRate ? `${(bestDeliveryRate * 100).toFixed(1)}%` : "-";
+        document.getElementById("live_best_delay").textContent =
+          bestDelay !== Infinity ? `${bestDelay.toFixed(2)}` : "-";
+      }
+
+      function completeSimulation() {
+        isTestRunning = false;
+        testCompletionTime = new Date().toISOString();
+
+        // Stop animation
+        if (animationFrameId) {
+          cancelAnimationFrame(animationFrameId);
         }
 
-        function clearResults() {
-            testResults = [];
-            testConfig = {};
-            document.getElementById('view_report').disabled = true;
-            document.getElementById('live_best_protocol').textContent = '-';
-            document.getElementById('live_best_delivery_rate').textContent = '-';
-            document.getElementById('live_best_delay').textContent = '-';
-            document.getElementById('progress').textContent = '0%';
-            document.getElementById('protocols_tested').textContent = '0';
-            document.getElementById('scenarios_completed').textContent = '0';
-            document.getElementById('current_test').textContent = 'Not Started';
-            
-            // Reset canvas
-            initializeNetwork();
+        // Update UI
+        document.getElementById("start_test").disabled = false;
+        document.getElementById("stop_test").disabled = true;
+        document.getElementById("view_report").disabled = false;
+        document.getElementById("current_test").textContent = "Completed";
+        document.getElementById("progress").textContent = "100%";
+
+        // Update live results with final data
+        updateLiveStats();
+
+        // Show completion alert
+        showCompletionAlert();
+      }
+
+      function showCompletionAlert() {
+        const alert = document.getElementById("completionAlert");
+        alert.classList.add("show");
+
+        // Auto-hide after 10 seconds
+        setTimeout(() => {
+          alert.classList.remove("show");
+        }, 10000);
+      }
+
+      function stopTest() {
+        isTestRunning = false;
+
+        // Stop animation
+        if (animationFrameId) {
+          cancelAnimationFrame(animationFrameId);
         }
 
-        function showReport() {
-            if (testResults.length === 0) {
-                alert('No test results available. Please run a simulation first.');
-                return;
-            }
+        // Call the API to stop the simulation
+        fetch("/api/stop_simulation", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            console.log("Simulation stopped:", data);
+          })
+          .catch((error) => {
+            console.error("Error stopping simulation:", error);
+          });
 
-            generateReport();
-            document.getElementById('reportModal').style.display = 'block';
+        document.getElementById("start_test").disabled = false;
+        document.getElementById("stop_test").disabled = true;
+        document.getElementById("current_test").textContent = "Stopped";
+      }
+
+      function clearResults() {
+        testResults = [];
+        testConfig = {};
+        document.getElementById("view_report").disabled = true;
+        document.getElementById("live_best_protocol").textContent = "-";
+        document.getElementById("live_best_delivery_rate").textContent = "-";
+        document.getElementById("live_best_delay").textContent = "-";
+        document.getElementById("progress").textContent = "0%";
+        document.getElementById("protocols_tested").textContent = "0";
+        document.getElementById("scenarios_completed").textContent = "0";
+        document.getElementById("current_test").textContent = "Not Started";
+
+        // Reset canvas
+        initializeNetwork();
+      }
+
+      function showReport() {
+        if (testResults.length === 0) {
+          alert("No test results available. Please run a simulation first.");
+          return;
         }
 
-        function closeReport() {
-            document.getElementById('reportModal').style.display = 'none';
-        }
+        generateReport();
+        document.getElementById("reportModal").style.display = "block";
+      }
 
-        function generateReport() {
-            const reportContent = document.getElementById('reportContent');
-            
-            // Calculate comprehensive statistics
-            const stats = calculateComprehensiveStats();
-            
-            reportContent.innerHTML = `
+      function closeReport() {
+        document.getElementById("reportModal").style.display = "none";
+      }
+
+      function generateReport() {
+        const reportContent = document.getElementById("reportContent");
+
+        // Calculate comprehensive statistics
+        const stats = calculateComprehensiveStats();
+
+        reportContent.innerHTML = `
                 <!-- Test Summary -->
                 <div class="test-summary">
                     <h3>🧪 Test Summary</h3>
                     <div class="summary-grid">
                         <div class="summary-item">
-                            <span class="value">${testConfig.num_scenarios}</span>
+                            <span class="value">${
+                              testConfig.num_scenarios
+                            }</span>
                             <span class="label">Scenarios</span>
                         </div>
                         <div class="summary-item">
-                            <span class="value">${testConfig.protocols.length}</span>
+                            <span class="value">${
+                              testConfig.protocols.length
+                            }</span>
                             <span class="label">Protocols</span>
                         </div>
                         <div class="summary-item">
@@ -1614,11 +1793,17 @@ function runDemoSimulation() {
                             <span class="label">Network Nodes</span>
                         </div>
                         <div class="summary-item">
-                            <span class="value">${testConfig.simulation_time}s</span>
+                            <span class="value">${
+                              testConfig.simulation_time
+                            }s</span>
                             <span class="label">Sim Time</span>
                         </div>
                         <div class="summary-item">
-                            <span class="value">${testConfig.enable_route_selection ? 'Fixed' : 'Random'}</span>
+                            <span class="value">${
+                              testConfig.enable_route_selection
+                                ? "Fixed"
+                                : "Random"
+                            }</span>
                             <span class="label">Route Type</span>
                         </div>
                     </div>
@@ -1628,42 +1813,71 @@ function runDemoSimulation() {
                 <div class="best-protocol">
                     <h3>🏆 Best Performing Protocol</h3>
                     <h2>${stats.bestProtocol.name}</h2>
-                    <p><strong>Average Delivery Rate:</strong> ${(stats.bestProtocol.avgDelivery * 100).toFixed(2)}%</p>
-                    <p><strong>Average Delay:</strong> ${stats.bestProtocol.avgDelay.toFixed(2)} ms</p>
-                    <p><strong>Routing Overhead:</strong> ${(stats.bestProtocol.avgOverhead * 100).toFixed(2)}%</p>
+                    <p><strong>Average Delivery Rate:</strong> ${(
+                      stats.bestProtocol.avgDelivery * 100
+                    ).toFixed(2)}%</p>
+                    <p><strong>Average Delay:</strong> ${stats.bestProtocol.avgDelay.toFixed(
+                      2
+                    )} ms</p>
+                    <p><strong>Routing Overhead:</strong> ${(
+                      stats.bestProtocol.avgOverhead * 100
+                    ).toFixed(2)}%</p>
                 </div>
 
                 <!-- Route Information -->
-                ${testConfig.enable_route_selection ? `
+                ${
+                  testConfig.enable_route_selection
+                    ? `
                 <div class="report-section">
                     <h3>🎯 Route Information</h3>
-                    <p style="color:black;"><strong>Source Node:</strong> ${testConfig.source_node}</p>
-                    <p style="color:black;"><strong>Destination Node:</strong> ${testConfig.destination_node}</p>
+                    <p style="color:black;"><strong>Source Node:</strong> ${
+                      testConfig.source_node
+                    }</p>
+                    <p style="color:black;"><strong>Destination Node:</strong> ${
+                      testConfig.destination_node
+                    }</p>
                     <p style="color:black;"><strong>Route Type:</strong> Fixed route for all test scenarios</p>
-                    <p style="color:black;"><strong>Total Distance:</strong> ${calculateRouteDistance(testConfig.source_node, testConfig.destination_node)} meters (estimated)</p>
+                    <p style="color:black;"><strong>Total Distance:</strong> ${calculateRouteDistance(
+                      testConfig.source_node,
+                      testConfig.destination_node
+                    )} meters (estimated)</p>
                 </div>
-                ` : `
+                `
+                    : `
                 <div class="report-section">
                     <h3>🎯 Route Information</h3>
                     <p><strong>Route Type:</strong> Random source-destination pairs</p>
                     <p><strong>Average Routes per Protocol:</strong> ${testConfig.num_scenarios}</p>
                     <p><strong>Node Coverage:</strong> All ${testConfig.num_nodes} nodes participated</p>
                 </div>
-                `}
+                `
+                }
 
                 <!-- Network Configuration -->
                 <div class="report-section">
                     <h3>🔧 Network Configuration</h3>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                         <div>
-                            <p><strong>Network Size:</strong> ${testConfig.num_nodes} nodes</p>
-                            <p><strong>Area Dimensions:</strong> ${testConfig.area_width} × ${testConfig.area_height} m</p>
-                            <p><strong>Transmission Range:</strong> ${testConfig.transmission_range} m</p>
+                            <p><strong>Network Size:</strong> ${
+                              testConfig.num_nodes
+                            } nodes</p>
+                            <p><strong>Area Dimensions:</strong> ${
+                              testConfig.area_width
+                            } × ${testConfig.area_height} m</p>
+                            <p><strong>Transmission Range:</strong> ${
+                              testConfig.transmission_range
+                            } m</p>
                         </div>
                         <div>
-                            <p><strong>Mobility Model:</strong> ${testConfig.mobility_model}</p>
-                            <p><strong>Packet Rate:</strong> ${testConfig.packet_rate} packets/s</p>
-                            <p><strong>Test Duration:</strong> ${testConfig.simulation_time} seconds each</p>
+                            <p><strong>Mobility Model:</strong> ${
+                              testConfig.mobility_model
+                            }</p>
+                            <p><strong>Packet Rate:</strong> ${
+                              testConfig.packet_rate
+                            } packets/s</p>
+                            <p><strong>Test Duration:</strong> ${
+                              testConfig.simulation_time
+                            } seconds each</p>
                         </div>
                     </div>
                 </div>
@@ -1696,21 +1910,46 @@ function runDemoSimulation() {
                     <div style="background: white; padding: 20px; border-radius: 8px; margin-top: 15px;">
                         <h4>Key Findings:</h4>
                         <ul style="line-height: 1.8;">
-                            <li><strong>Best Overall Protocol:</strong> ${stats.bestProtocol.name} achieved the highest packet delivery ratio of ${(stats.bestProtocol.avgDelivery * 100).toFixed(2)}%</li>
-                            <li><strong>Lowest Latency:</strong> ${stats.lowestDelayProtocol.name} had the lowest average delay of ${stats.lowestDelayProtocol.avgDelay.toFixed(2)} ms</li>
-                            <li><strong>Most Efficient:</strong> ${stats.mostEfficientProtocol.name} had the lowest routing overhead of ${(stats.mostEfficientProtocol.avgOverhead * 100).toFixed(2)}%</li>
-                            <li><strong>Network Density:</strong> With ${testConfig.num_nodes} nodes in ${testConfig.area_width}×${testConfig.area_height}m area, network density was ${calculateNetworkDensity().toFixed(4)} nodes/m²</li>
-                            ${testConfig.enable_route_selection ? 
-                                `<li><strong>Fixed Route Analysis:</strong> The chosen route from Node ${testConfig.source_node} to Node ${testConfig.destination_node} provided consistent results across all protocols</li>` :
-                                `<li><strong>Random Route Analysis:</strong> Testing with random routes provided comprehensive coverage of network scenarios</li>`
+                            <li><strong>Best Overall Protocol:</strong> ${
+                              stats.bestProtocol.name
+                            } achieved the highest packet delivery ratio of ${(
+          stats.bestProtocol.avgDelivery * 100
+        ).toFixed(2)}%</li>
+                            <li><strong>Lowest Latency:</strong> ${
+                              stats.lowestDelayProtocol.name
+                            } had the lowest average delay of ${stats.lowestDelayProtocol.avgDelay.toFixed(
+          2
+        )} ms</li>
+                            <li><strong>Most Efficient:</strong> ${
+                              stats.mostEfficientProtocol.name
+                            } had the lowest routing overhead of ${(
+          stats.mostEfficientProtocol.avgOverhead * 100
+        ).toFixed(2)}%</li>
+                            <li><strong>Network Density:</strong> With ${
+                              testConfig.num_nodes
+                            } nodes in ${testConfig.area_width}×${
+          testConfig.area_height
+        }m area, network density was ${calculateNetworkDensity().toFixed(
+          4
+        )} nodes/m²</li>
+                            ${
+                              testConfig.enable_route_selection
+                                ? `<li><strong>Fixed Route Analysis:</strong> The chosen route from Node ${testConfig.source_node} to Node ${testConfig.destination_node} provided consistent results across all protocols</li>`
+                                : `<li><strong>Random Route Analysis:</strong> Testing with random routes provided comprehensive coverage of network scenarios</li>`
                             }
                         </ul>
                         
                         <h4>Recommendations:</h4>
                         <ul style="line-height: 1.8;">
-                            <li>For applications requiring <strong>high reliability</strong>: Use ${stats.bestProtocol.name}</li>
-                            <li>For applications requiring <strong>low latency</strong>: Use ${stats.lowestDelayProtocol.name}</li>
-                            <li>For applications with <strong>limited bandwidth</strong>: Use ${stats.mostEfficientProtocol.name}</li>
+                            <li>For applications requiring <strong>high reliability</strong>: Use ${
+                              stats.bestProtocol.name
+                            }</li>
+                            <li>For applications requiring <strong>low latency</strong>: Use ${
+                              stats.lowestDelayProtocol.name
+                            }</li>
+                            <li>For applications with <strong>limited bandwidth</strong>: Use ${
+                              stats.mostEfficientProtocol.name
+                            }</li>
                             <li>Consider network mobility patterns when selecting protocols for real-world deployment</li>
                         </ul>
                     </div>
@@ -1720,10 +1959,21 @@ function runDemoSimulation() {
                 <div class="report-section">
                     <h3>🌐 Test Environment Details</h3>
                     <div style="background: white; padding: 20px; border-radius: 8px; margin-top: 15px;">
-                        <p><strong>Test Completion Time:</strong> ${new Date(testCompletionTime).toLocaleString()}</p>
+                        <p><strong>Test Completion Time:</strong> ${new Date(
+                          testCompletionTime
+                        ).toLocaleString()}</p>
                         <p><strong>Total Test Duration:</strong> ${calculateTotalTestDuration()} minutes</p>
-                        <p><strong>Average Test Time per Protocol:</strong> ${(calculateTotalTestDuration() / testConfig.protocols.length).toFixed(2)} minutes</p>
-                        <p><strong>Network Coverage:</strong> ${((testConfig.transmission_range * testConfig.transmission_range * Math.PI) / (testConfig.area_width * testConfig.area_height) * 100).toFixed(2)}% area per node transmission range</p>
+                        <p><strong>Average Test Time per Protocol:</strong> ${(
+                          calculateTotalTestDuration() /
+                          testConfig.protocols.length
+                        ).toFixed(2)} minutes</p>
+                        <p><strong>Network Coverage:</strong> ${(
+                          ((testConfig.transmission_range *
+                            testConfig.transmission_range *
+                            Math.PI) /
+                            (testConfig.area_width * testConfig.area_height)) *
+                          100
+                        ).toFixed(2)}% area per node transmission range</p>
                     </div>
                 </div>
 
@@ -1741,386 +1991,679 @@ function runDemoSimulation() {
                 </div>
             `;
 
-            // Generate charts after content is rendered
-            setTimeout(() => {
-                generateCharts(stats.protocolStats);
-            }, 100);
-        }
+        // Generate charts after content is rendered
+        setTimeout(() => {
+          generateCharts(stats.protocolStats);
+        }, 100);
+      }
 
-        function calculateComprehensiveStats() {
-            const protocolStats = {};
-            
-            // Group results by protocol
-            testResults.forEach(result => {
-                if (!protocolStats[result.protocol]) {
-                    protocolStats[result.protocol] = {
-                        name: result.protocol,
-                        results: [],
-                        totalDelivery: 0,
-                        totalDelay: 0,
-                        totalOverhead: 0,
-                        totalThroughput: 0,
-                        totalEnergy: 0
-                    };
-                }
-                
-                const stats = protocolStats[result.protocol];
-                stats.results.push(result);
-                stats.totalDelivery += result.metrics.packet_delivery_ratio;
-                stats.totalDelay += result.metrics.average_delay;
-                stats.totalOverhead += result.metrics.routing_overhead;
-                stats.totalThroughput += result.metrics.throughput;
-                stats.totalEnergy += result.metrics.energy_consumption;
-            });
+      function calculateComprehensiveStats() {
+        const protocolStats = {};
 
-            // Calculate averages
-            Object.keys(protocolStats).forEach(protocol => {
-                const stats = protocolStats[protocol];
-                const count = stats.results.length;
-                stats.avgDelivery = stats.totalDelivery / count;
-                stats.avgDelay = stats.totalDelay / count;
-                stats.avgOverhead = stats.totalOverhead / count;
-                stats.avgThroughput = stats.totalThroughput / count;
-                stats.avgEnergy = stats.totalEnergy / count;
-            });
-
-            // Find best performers
-            const protocols = Object.values(protocolStats);
-            const bestProtocol = protocols.reduce((best, current) => 
-                current.avgDelivery > best.avgDelivery ? current : best);
-            
-            const lowestDelayProtocol = protocols.reduce((best, current) => 
-                current.avgDelay < best.avgDelay ? current : best);
-            
-            const mostEfficientProtocol = protocols.reduce((best, current) => 
-                current.avgOverhead < best.avgOverhead ? current : best);
-
-            return {
-                protocolStats,
-                bestProtocol,
-                lowestDelayProtocol,
-                mostEfficientProtocol
+        // Group results by protocol
+        testResults.forEach((result) => {
+          if (!protocolStats[result.protocol]) {
+            protocolStats[result.protocol] = {
+              name: result.protocol,
+              results: [],
+              totalDelivery: 0,
+              totalDelay: 0,
+              totalOverhead: 0,
+              totalThroughput: 0,
+              totalEnergy: 0,
             };
-        }
+          }
 
-        function generateProtocolCards(protocolStats) {
-            return Object.values(protocolStats).map(protocol => {
-                const isBest = protocol.avgDelivery === Math.max(...Object.values(protocolStats).map(p => p.avgDelivery));
-                
-                return `
-                    <div class="protocol-card ${isBest ? 'best' : ''}">
-                        <h4>${protocol.name} ${isBest ? '🏆' : ''}</h4>
+          const stats = protocolStats[result.protocol];
+          stats.results.push(result);
+          stats.totalDelivery += result.metrics.packet_delivery_ratio;
+          stats.totalDelay += result.metrics.average_delay;
+          stats.totalOverhead += result.metrics.routing_overhead;
+          stats.totalThroughput += result.metrics.throughput;
+          stats.totalEnergy += result.metrics.energy_consumption;
+        });
+
+        // Calculate averages
+        Object.keys(protocolStats).forEach((protocol) => {
+          const stats = protocolStats[protocol];
+          const count = stats.results.length;
+          stats.avgDelivery = stats.totalDelivery / count;
+          stats.avgDelay = stats.totalDelay / count;
+          stats.avgOverhead = stats.totalOverhead / count;
+          stats.avgThroughput = stats.totalThroughput / count;
+          stats.avgEnergy = stats.totalEnergy / count;
+        });
+
+        // Find best performers
+        const protocols = Object.values(protocolStats);
+        const bestProtocol = protocols.reduce((best, current) =>
+          current.avgDelivery > best.avgDelivery ? current : best
+        );
+
+        const lowestDelayProtocol = protocols.reduce((best, current) =>
+          current.avgDelay < best.avgDelay ? current : best
+        );
+
+        const mostEfficientProtocol = protocols.reduce((best, current) =>
+          current.avgOverhead < best.avgOverhead ? current : best
+        );
+
+        return {
+          protocolStats,
+          bestProtocol,
+          lowestDelayProtocol,
+          mostEfficientProtocol,
+        };
+      }
+
+      function generateProtocolCards(protocolStats) {
+        return Object.values(protocolStats)
+          .map((protocol) => {
+            const isBest =
+              protocol.avgDelivery ===
+              Math.max(
+                ...Object.values(protocolStats).map((p) => p.avgDelivery)
+              );
+
+            return `
+                    <div class="protocol-card ${isBest ? "best" : ""}">
+                        <h4>${protocol.name} ${isBest ? "🏆" : ""}</h4>
                         <div class="metric-row">
                             <span class="metric-label">Packet Delivery Ratio</span>
-                            <span class="metric-value">${(protocol.avgDelivery * 100).toFixed(2)}%</span>
+                            <span class="metric-value">${(
+                              protocol.avgDelivery * 100
+                            ).toFixed(2)}%</span>
                         </div>
                         <div class="metric-row">
                             <span class="metric-label">Average Delay</span>
-                            <span class="metric-value">${protocol.avgDelay.toFixed(2)} ms</span>
+                            <span class="metric-value">${protocol.avgDelay.toFixed(
+                              2
+                            )} ms</span>
                         </div>
                         <div class="metric-row">
                             <span class="metric-label">Routing Overhead</span>
-                            <span class="metric-value">${(protocol.avgOverhead * 100).toFixed(2)}%</span>
+                            <span class="metric-value">${(
+                              protocol.avgOverhead * 100
+                            ).toFixed(2)}%</span>
                         </div>
                         <div class="metric-row">
                             <span class="metric-label">Average Throughput</span>
-                            <span class="metric-value">${protocol.avgThroughput.toFixed(0)} kbps</span>
+                            <span class="metric-value">${protocol.avgThroughput.toFixed(
+                              0
+                            )} kbps</span>
                         </div>
                         <div class="metric-row">
                             <span class="metric-label">Energy Consumption</span>
-                            <span class="metric-value">${protocol.avgEnergy.toFixed(2)} mJ</span>
+                            <span class="metric-value">${protocol.avgEnergy.toFixed(
+                              2
+                            )} mJ</span>
                         </div>
                         <div class="metric-row">
                             <span class="metric-label">Test Scenarios</span>
-                            <span class="metric-value">${protocol.results.length}</span>
+                            <span class="metric-value">${
+                              protocol.results.length
+                            }</span>
                         </div>
                     </div>
                 `;
-            }).join('');
-        }
+          })
+          .join("");
+      }
 
-        function generateCharts(protocolStats) {
-            const protocols = Object.keys(protocolStats);
-            const deliveryData = protocols.map(p => protocolStats[p].avgDelivery * 100);
-            const delayData = protocols.map(p => protocolStats[p].avgDelay);
-            const overheadData = protocols.map(p => protocolStats[p].avgOverhead * 100);
+      function generateCharts(protocolStats) {
+        const protocols = Object.keys(protocolStats);
+        const deliveryData = protocols.map(
+          (p) => protocolStats[p].avgDelivery * 100
+        );
+        const delayData = protocols.map((p) => protocolStats[p].avgDelay);
+        const overheadData = protocols.map(
+          (p) => protocolStats[p].avgOverhead * 100
+        );
 
-            // Delivery Rate Chart
-            new Chart(document.getElementById('deliveryChart'), {
-                type: 'bar',
-                data: {
-                    labels: protocols,
-                    datasets: [{
-                        label: 'Packet Delivery Ratio (%)',
-                        data: deliveryData,
-                        backgroundColor: ['#4facfe', '#00f2fe', '#43e97b', '#38f9d7'],
-                        borderColor: ['#4facfe', '#00f2fe', '#43e97b', '#38f9d7'],
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Packet Delivery Ratio Comparison'
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 100
-                        }
-                    }
-                }
-            });
+        // Delivery Rate Chart
+        new Chart(document.getElementById("deliveryChart"), {
+          type: "bar",
+          data: {
+            labels: protocols,
+            datasets: [
+              {
+                label: "Packet Delivery Ratio (%)",
+                data: deliveryData,
+                backgroundColor: ["#4facfe", "#00f2fe", "#43e97b", "#38f9d7"],
+                borderColor: ["#4facfe", "#00f2fe", "#43e97b", "#38f9d7"],
+                borderWidth: 1,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              title: {
+                display: true,
+                text: "Packet Delivery Ratio Comparison",
+              },
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                max: 100,
+              },
+            },
+          },
+        });
 
-            // Delay Chart
-            new Chart(document.getElementById('delayChart'), {
-                type: 'bar',
-                data: {
-                    labels: protocols,
-                    datasets: [{
-                        label: 'Average Delay (ms)',
-                        data: delayData,
-                        backgroundColor: ['#ff9a9e', '#fecfef', '#fecfef', '#ff9a9e'],
-                        borderColor: ['#ff9a9e', '#fecfef', '#fecfef', '#ff9a9e'],
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Average Delay Comparison'
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
+        // Delay Chart
+        new Chart(document.getElementById("delayChart"), {
+          type: "bar",
+          data: {
+            labels: protocols,
+            datasets: [
+              {
+                label: "Average Delay (ms)",
+                data: delayData,
+                backgroundColor: ["#ff9a9e", "#fecfef", "#fecfef", "#ff9a9e"],
+                borderColor: ["#ff9a9e", "#fecfef", "#fecfef", "#ff9a9e"],
+                borderWidth: 1,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              title: {
+                display: true,
+                text: "Average Delay Comparison",
+              },
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+              },
+            },
+          },
+        });
 
-            // Overhead Chart
-            new Chart(document.getElementById('overheadChart'), {
-                type: 'bar',
-                data: {
-                    labels: protocols,
-                    datasets: [{
-                        label: 'Routing Overhead (%)',
-                        data: overheadData,
-                        backgroundColor: ['#a8edea', '#fed6e3', '#d299c2', '#fef9d7'],
-                        borderColor: ['#a8edea', '#fed6e3', '#d299c2', '#fef9d7'],
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Routing Overhead Comparison'
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
-        }
+        // Overhead Chart
+        new Chart(document.getElementById("overheadChart"), {
+          type: "bar",
+          data: {
+            labels: protocols,
+            datasets: [
+              {
+                label: "Routing Overhead (%)",
+                data: overheadData,
+                backgroundColor: ["#a8edea", "#fed6e3", "#d299c2", "#fef9d7"],
+                borderColor: ["#a8edea", "#fed6e3", "#d299c2", "#fef9d7"],
+                borderWidth: 1,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              title: {
+                display: true,
+                text: "Routing Overhead Comparison",
+              },
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+              },
+            },
+          },
+        });
+      }
 
-        function calculateRouteDistance(source, destination) {
-            // Simplified distance calculation (random placement assumption)
-            const avgDistance = Math.sqrt(testConfig.area_width * testConfig.area_height) / 2;
-            return Math.floor(avgDistance + Math.random() * avgDistance);
-        }
+      function calculateRouteDistance(source, destination) {
+        // Simplified distance calculation (random placement assumption)
+        const avgDistance =
+          Math.sqrt(testConfig.area_width * testConfig.area_height) / 2;
+        return Math.floor(avgDistance + Math.random() * avgDistance);
+      }
 
-        function calculateNetworkDensity() {
-            return testConfig.num_nodes / (testConfig.area_width * testConfig.area_height);
-        }
+      function calculateNetworkDensity() {
+        return (
+          testConfig.num_nodes /
+          (testConfig.area_width * testConfig.area_height)
+        );
+      }
 
-        function calculateTotalTestDuration() {
-            if (!testCompletionTime || testResults.length === 0) return 0;
-            const startTime = new Date(testResults[0].timestamp);
-            const endTime = new Date(testCompletionTime);
-            return (endTime - startTime) / (1000 * 60); // Convert to minutes
-        }
+      function calculateTotalTestDuration() {
+        if (!testCompletionTime || testResults.length === 0) return 0;
+        const startTime = new Date(testResults[0].timestamp);
+        const endTime = new Date(testCompletionTime);
+        return (endTime - startTime) / (1000 * 60); // Convert to minutes
+      }
 
-        // PDF Generation
-        function downloadPDFReport() {
-            const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF();
-            
-            // Title
-            pdf.setFontSize(20);
-            pdf.text('MANET Protocol Testing Report', 20, 20);
-            
-            // Test Summary
-            pdf.setFontSize(14);
-            pdf.text('Test Summary', 20, 40);
+      // PDF Generation
+      function downloadPDFReport() {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF("p", "mm", "a4");
+        const stats = calculateComprehensiveStats();
+        const MARGIN = 15;
+        const PAGE_WIDTH = pdf.internal.pageSize.getWidth();
+        const PAGE_HEIGHT = pdf.internal.pageSize.getHeight();
+        const CONTENT_WIDTH = PAGE_WIDTH - MARGIN * 2;
+        const TITLE_FONT_SIZE = 22;
+        const HEADER_FONT_SIZE = 16;
+        const BODY_FONT_SIZE = 11;
+        const PRIMARY_COLOR = "#4facfe";
+        const TEXT_COLOR = "#333333";
+
+        let yPos = MARGIN;
+
+        const addHeaderFooter = () => {
+          const pageCount = pdf.internal.getNumberOfPages();
+          for (let i = 1; i <= pageCount; i++) {
+            pdf.setPage(i);
+            // Header
             pdf.setFontSize(10);
-            pdf.text(`Test Date: ${new Date(testCompletionTime).toLocaleDateString()}`, 20, 50);
-            pdf.text(`Protocols Tested: ${testConfig.protocols.join(', ')}`, 20, 60);
-            pdf.text(`Number of Scenarios: ${testConfig.num_scenarios}`, 20, 70);
-            pdf.text(`Network Nodes: ${testConfig.num_nodes}`, 20, 80);
-            pdf.text(`Simulation Time: ${testConfig.simulation_time}s per test`, 20, 90);
-            
-            if (testConfig.enable_route_selection) {
-                pdf.text(`Route: Node ${testConfig.source_node} → Node ${testConfig.destination_node}`, 20, 100);
+            pdf.setTextColor("#6c757d");
+            pdf.text("MANET Protocol Testing Report", MARGIN, MARGIN / 2);
+            pdf.text(
+              new Date().toLocaleDateString(),
+              PAGE_WIDTH - MARGIN,
+              MARGIN / 2,
+              { align: "right" }
+            );
+            pdf.line(
+              MARGIN,
+              MARGIN / 2 + 3,
+              PAGE_WIDTH - MARGIN,
+              MARGIN / 2 + 3
+            );
+
+            // Footer
+            pdf.text(
+              `Page ${i} of ${pageCount}`,
+              PAGE_WIDTH / 2,
+              PAGE_HEIGHT - MARGIN / 2,
+              { align: "center" }
+            );
+          }
+        };
+
+        // Helper to check for page breaks and add new pages
+        const checkPageBreak = (requiredHeight) => {
+          if (yPos + requiredHeight > PAGE_HEIGHT - MARGIN) {
+            pdf.addPage();
+            yPos = MARGIN + 5; // Reset yPos for new page
+          }
+        };
+
+        // --- 1. Report Title ---
+        pdf.setFontSize(TITLE_FONT_SIZE);
+        pdf.setTextColor(PRIMARY_COLOR);
+        pdf.text("MANET Protocol Testing Report", PAGE_WIDTH / 2, yPos + 5, {
+          align: "center",
+        });
+        yPos += 15;
+
+        // --- 2. Test Summary Section ---
+        pdf.setFontSize(HEADER_FONT_SIZE);
+        pdf.setTextColor(TEXT_COLOR);
+        pdf.text("Test Summary", MARGIN, yPos);
+        yPos += 8;
+
+        pdf.setFontSize(BODY_FONT_SIZE);
+        pdf.text(
+          `- Network Size: ${testConfig.num_nodes} nodes`,
+          MARGIN + 5,
+          yPos
+        );
+        pdf.text(
+          `- Mobility Model: ${testConfig.mobility_model}`,
+          PAGE_WIDTH / 2,
+          yPos
+        );
+        yPos += 7;
+        pdf.text(
+          `- Area Dimensions: ${testConfig.area_width}x${testConfig.area_height} m`,
+          MARGIN + 5,
+          yPos
+        );
+        pdf.text(
+          `- Packet Rate: ${testConfig.packet_rate} packets/s`,
+          PAGE_WIDTH / 2,
+          yPos
+        );
+        yPos += 7;
+        pdf.text(
+          `- Scenarios per Protocol: ${testConfig.num_scenarios}`,
+          MARGIN + 5,
+          yPos
+        );
+        pdf.text(
+          `- Route Type: ${
+            testConfig.enable_route_selection ? "Fixed" : "Random"
+          }`,
+          PAGE_WIDTH / 2,
+          yPos
+        );
+        yPos += 10;
+
+        pdf.setDrawColor("#e0e0e0");
+        pdf.line(MARGIN, yPos, PAGE_WIDTH - MARGIN, yPos);
+        yPos += 10;
+
+        // --- 3. Best Performing Protocol Section ---
+        checkPageBreak(25);
+        pdf.setFontSize(HEADER_FONT_SIZE);
+        pdf.text("Best Performing Protocol", MARGIN, yPos);
+        yPos += 8;
+
+        pdf.setFillColor("#e8f5e9"); // Light green background
+        pdf.roundedRect(MARGIN, yPos, CONTENT_WIDTH, 20, 3, 3, "F");
+        pdf.setFontSize(14).setFont(undefined, "bold");
+        pdf.text(stats.bestProtocol.name, MARGIN + 5, yPos + 8);
+        pdf.setFontSize(BODY_FONT_SIZE).setFont(undefined, "normal");
+        pdf.text(
+          `Delivery: ${(stats.bestProtocol.avgDelivery * 100).toFixed(
+            2
+          )}% | Delay: ${stats.bestProtocol.avgDelay.toFixed(
+            2
+          )}ms | Overhead: ${(stats.bestProtocol.avgOverhead * 100).toFixed(
+            2
+          )}%`,
+          MARGIN + 5,
+          yPos + 15
+        );
+        yPos += 30;
+
+        // --- 4. Protocol Performance Comparison (Table) ---
+        checkPageBreak(40); // Check if enough space for header and a few rows
+        pdf.setFontSize(HEADER_FONT_SIZE);
+        pdf.text("Performance Comparison", MARGIN, yPos);
+        yPos += 8;
+
+        const tableHead = [
+          [
+            "Protocol",
+            "Delivery Ratio (%)",
+            "Avg. Delay (ms)",
+            "Routing Overhead (%)",
+            "Throughput (kbps)",
+          ],
+        ];
+        const tableBody = Object.values(stats.protocolStats).map((p) => [
+          p.name,
+          (p.avgDelivery * 100).toFixed(2),
+          p.avgDelay.toFixed(2),
+          (p.avgOverhead * 100).toFixed(2),
+          p.avgThroughput.toFixed(0),
+        ]);
+
+        pdf.autoTable({
+          head: tableHead,
+          body: tableBody,
+          startY: yPos,
+          theme: "grid",
+          headStyles: { fillColor: PRIMARY_COLOR },
+          didDrawPage: (data) => {
+            // This ensures the header/footer is drawn on every page the table creates
+            yPos = data.cursor.y;
+          },
+        });
+        // update yPos to be below the table
+        yPos = pdf.autoTable.previous.finalY + 10;
+
+        // --- 5. Performance Charts ---
+        checkPageBreak(10);
+        pdf.setFontSize(HEADER_FONT_SIZE);
+        pdf.text("Performance Charts", MARGIN, yPos);
+        yPos += 10;
+
+        const chartHeight = 60;
+        const chartWidth = CONTENT_WIDTH / 2 - 5;
+
+        try {
+          const deliveryChart = document.getElementById("deliveryChart");
+          const delayChart = document.getElementById("delayChart");
+          const overheadChart = document.getElementById("overheadChart");
+
+          const deliveryImg = deliveryChart.toDataURL("image/png", 1.0);
+          const delayImg = delayChart.toDataURL("image/png", 1.0);
+          const overheadImg = overheadChart.toDataURL("image/png", 1.0);
+
+          checkPageBreak(chartHeight + 10);
+          pdf.addImage(
+            deliveryImg,
+            "PNG",
+            MARGIN,
+            yPos,
+            chartWidth,
+            chartHeight
+          );
+          pdf.addImage(
+            delayImg,
+            "PNG",
+            MARGIN + chartWidth + 10,
+            yPos,
+            chartWidth,
+            chartHeight
+          );
+          yPos += chartHeight + 10;
+
+          checkPageBreak(chartHeight + 10);
+          pdf.addImage(
+            overheadImg,
+            "PNG",
+            MARGIN,
+            yPos,
+            chartWidth,
+            chartHeight
+          );
+          yPos += chartHeight + 15;
+        } catch (e) {
+          console.error("Could not add charts to PDF:", e);
+          pdf.text("Charts could not be generated.", MARGIN, yPos);
+          yPos += 10;
+        }
+
+        // --- 6. Analysis & Recommendations ---
+        checkPageBreak(60);
+        pdf.setFontSize(HEADER_FONT_SIZE);
+        pdf.text("Analysis & Recommendations", MARGIN, yPos);
+        yPos += 8;
+
+        pdf.setFontSize(BODY_FONT_SIZE);
+        const recommendationsText = `
+Based on the simulation results:
+- For high reliability and data integrity, ${stats.bestProtocol.name} is the recommended choice due to its superior packet delivery ratio.
+- For time-sensitive applications like VoIP or real-time gaming, ${stats.lowestDelayProtocol.name} is preferable because of its minimal latency.
+- In scenarios with constrained bandwidth or energy (e.g., IoT sensor networks), ${stats.mostEfficientProtocol.name} is the most suitable due to its low routing overhead.
+    `;
+        const splitText = pdf.splitTextToSize(
+          recommendationsText,
+          CONTENT_WIDTH
+        );
+        pdf.text(splitText, MARGIN, yPos);
+
+        // --- Finalize and Save ---
+        addHeaderFooter(); // Add header/footer to all pages
+        const filename = `MANET_Report_${
+          new Date().toISOString().split("T")[0]
+        }.pdf`;
+        pdf.save(filename);
+      }
+
+      // CSV Download
+      function downloadCSVData() {
+        const csvContent = generateCSV();
+        const blob = new Blob([csvContent], {
+          type: "text/csv;charset=utf-8;",
+        });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute(
+          "download",
+          `MANET_Results_${new Date().toISOString().split("T")[0]}.csv`
+        );
+        link.style.visibility = "hidden";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
+      function generateCSV() {
+        const headers = [
+          "Protocol",
+          "Scenario",
+          "Timestamp",
+          "Packet_Delivery_Ratio",
+          "Average_Delay_ms",
+          "Routing_Overhead",
+          "Throughput_kbps",
+          "Energy_Consumption_mJ",
+        ];
+
+        let csvContent = headers.join(",") + "\n";
+
+        testResults.forEach((result) => {
+          const row = [
+            result.protocol,
+            result.scenario + 1,
+            result.timestamp,
+            result.metrics.packet_delivery_ratio.toFixed(4),
+            result.metrics.average_delay.toFixed(2),
+            result.metrics.routing_overhead.toFixed(4),
+            result.metrics.throughput.toFixed(0),
+            result.metrics.energy_consumption.toFixed(2),
+          ];
+          csvContent += row.join(",") + "\n";
+        });
+
+        return csvContent;
+      }
+
+      // JSON Download
+      function downloadJSONData() {
+        const data = {
+          test_configuration: testConfig,
+          test_results: testResults,
+          test_completion_time: testCompletionTime,
+          summary_statistics: calculateComprehensiveStats(),
+        };
+
+        const blob = new Blob([JSON.stringify(data, null, 2)], {
+          type: "application/json",
+        });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute(
+          "download",
+          `MANET_Config_${new Date().toISOString().split("T")[0]}.json`
+        );
+        link.style.visibility = "hidden";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
+      // Polling function for real API integration
+      async function pollSimulationProgress() {
+        const pollInterval = setInterval(async () => {
+          try {
+            const response = await fetch("/api/simulation_status");
+            const status = await response.json();
+
+            if (status.completed) {
+              clearInterval(pollInterval);
+              testResults = status.results;
+              completeSimulation();
             } else {
-                pdf.text('Route: Random source-destination pairs', 20, 100);
-            }
+              // Update progress
+              document.getElementById(
+                "progress"
+              ).textContent = `${status.progress}%`;
+              document.getElementById("current_test").textContent =
+                status.current_test;
+              document.getElementById("scenarios_completed").textContent =
+                status.scenarios_completed;
+              document.getElementById("protocols_tested").textContent =
+                status.protocols_tested;
 
-            // Best Protocol
-            const stats = calculateComprehensiveStats();
-            pdf.setFontSize(14);
-            pdf.text('Best Performing Protocol', 20, 120);
-            pdf.setFontSize(12);
-            pdf.text(`${stats.bestProtocol.name}`, 20, 130);
-            pdf.setFontSize(10);
-            pdf.text(`Delivery Rate: ${(stats.bestProtocol.avgDelivery * 100).toFixed(2)}%`, 20, 140);
-            pdf.text(`Average Delay: ${stats.bestProtocol.avgDelay.toFixed(2)} ms`, 20, 150);
-            pdf.text(`Routing Overhead: ${(stats.bestProtocol.avgOverhead * 100).toFixed(2)}%`, 20, 160);
+              // Update route information if available
+              if (status.results && status.results.length > 0) {
+                const latestResult = status.results[status.results.length - 1];
+                console.log("Latest result:", latestResult);
 
-            // Protocol Comparison
-            let yPos = 180;
-            pdf.setFontSize(14);
-            pdf.text('Protocol Performance Comparison', 20, yPos);
-            yPos += 20;
+                // Update test results for live stats
+                testResults = status.results;
+                updateLiveStats();
 
-            Object.values(stats.protocolStats).forEach(protocol => {
-                if (yPos > 250) {
-                    pdf.addPage();
-                    yPos = 20;
+                if (latestResult.route_info) {
+                  const sourceNode = latestResult.route_info.source_node;
+                  const destNode = latestResult.route_info.destination_node;
+
+                  console.log(
+                    `Updating route: Node ${sourceNode} → Node ${destNode}`
+                  );
+
+                  // Update the current route display
+                  const routeElement = document.getElementById("current_route");
+                  if (routeElement) {
+                    routeElement.textContent = `Node ${sourceNode} → Node ${destNode}`;
+                    console.log("Route display updated");
+                  } else {
+                    console.log("Route element not found");
+                  }
+
+                  // Show the route section if it's hidden
+                  const routeSection = document.getElementById(
+                    "current_route_section"
+                  );
+                  const routeInfo = document.getElementById("route_info");
+                  if (routeSection && routeInfo) {
+                    routeSection.style.display = "block";
+                    routeInfo.style.display = "flex";
+                  }
+
+                  // Update the visualization
+                  if (typeof updateSourceDestinationUI === "function") {
+                    updateSourceDestinationUI(sourceNode, destNode);
+                    console.log("Visualization updated");
+                  } else {
+                    console.log("updateSourceDestinationUI function not found");
+                  }
+                } else {
+                  console.log("No route_info in latest result");
                 }
-                
-                pdf.setFontSize(12);
-                pdf.text(protocol.name, 20, yPos);
-                pdf.setFontSize(10);
-                pdf.text(`Delivery: ${(protocol.avgDelivery * 100).toFixed(2)}%`, 30, yPos + 10);
-                pdf.text(`Delay: ${protocol.avgDelay.toFixed(2)}ms`, 90, yPos + 10);
-                pdf.text(`Overhead: ${(protocol.avgOverhead * 100).toFixed(2)}%`, 140, yPos + 10);
-                yPos += 25;
-            });
-
-            // Save PDF
-            const filename = `MANET_Report_${new Date().toISOString().split('T')[0]}.pdf`;
-            pdf.save(filename);
-        }
-
-        // CSV Download
-        function downloadCSVData() {
-            const csvContent = generateCSV();
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            const url = URL.createObjectURL(blob);
-            link.setAttribute('href', url);
-            link.setAttribute('download', `MANET_Results_${new Date().toISOString().split('T')[0]}.csv`);
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        function generateCSV() {
-            const headers = [
-                'Protocol', 'Scenario', 'Timestamp', 'Packet_Delivery_Ratio', 
-                'Average_Delay_ms', 'Routing_Overhead', 'Throughput_kbps', 
-                'Energy_Consumption_mJ', 'Route_Discovery_Time_ms', 'Source_Node', 'Destination_Node'
-            ];
-            
-            let csvContent = headers.join(',') + '\n';
-            
-            testResults.forEach(result => {
-                const row = [
-                    result.protocol,
-                    result.scenario + 1,
-                    result.timestamp,
-                    result.metrics.packet_delivery_ratio.toFixed(4),
-                    result.metrics.average_delay.toFixed(2),
-                    result.metrics.routing_overhead.toFixed(4),
-                    result.metrics.throughput.toFixed(0),
-                    result.metrics.energy_consumption.toFixed(2),
-                    result.metrics.route_discovery_time.toFixed(2),
-                    result.route_info.source,
-                    result.route_info.destination
-                ];
-                csvContent += row.join(',') + '\n';
-            });
-            
-            return csvContent;
-        }
-
-        // JSON Download
-        function downloadJSONData() {
-            const data = {
-                test_configuration: testConfig,
-                test_results: testResults,
-                test_completion_time: testCompletionTime,
-                summary_statistics: calculateComprehensiveStats()
-            };
-            
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            const link = document.createElement('a');
-            const url = URL.createObjectURL(blob);
-            link.setAttribute('href', url);
-            link.setAttribute('download', `MANET_Config_${new Date().toISOString().split('T')[0]}.json`);
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        // Polling function for real API integration
-        async function pollSimulationProgress() {
-            const pollInterval = setInterval(async () => {
-                try {
-                    const response = await fetch('/api/simulation_status');
-                    const status = await response.json();
-                    
-                    if (status.completed) {
-                        clearInterval(pollInterval);
-                        testResults = status.results;
-                        completeSimulation();
-                    } else {
-                        // Update progress
-                        document.getElementById('progress').textContent = `${status.progress}%`;
-                        document.getElementById('current_test').textContent = status.current_test;
-                        document.getElementById('scenarios_completed').textContent = status.scenarios_completed;
-                    }
-                } catch (error) {
-                    console.error('Polling error:', error);
-                }
-            }, 2000);
-        }
-
-        // Close modal when clicking outside
-        window.onclick = function(event) {
-            const modal = document.getElementById('reportModal');
-            if (event.target == modal) {
-                closeReport();
+              } else {
+                console.log("No results available yet");
+              }
             }
-        }
+          } catch (error) {
+            console.error("Polling error:", error);
+          }
+        }, 2000);
+      }
 
-        // Hide completion alert when clicking outside
-        document.getElementById('completionAlert').onclick = function(event) {
-            event.stopPropagation();
+      // Close modal when clicking outside
+      window.onclick = function (event) {
+        const modal = document.getElementById("reportModal");
+        if (event.target == modal) {
+          closeReport();
         }
+      };
 
-        document.onclick = function(event) {
-            const alert = document.getElementById('completionAlert');
-            if (!alert.contains(event.target)) {
-                alert.classList.remove('show');
-            }
+      // Hide completion alert when clicking outside
+      document.getElementById("completionAlert").onclick = function (event) {
+        event.stopPropagation();
+      };
+
+      document.onclick = function (event) {
+        const alert = document.getElementById("completionAlert");
+        if (!alert.contains(event.target)) {
+          alert.classList.remove("show");
         }
+      };
     </script>
-</body>
+  </body>
 </html>

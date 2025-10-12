@@ -1,0 +1,344 @@
+{
+  "test_configuration": {
+    "num_nodes": 20,
+    "area_width": 1000,
+    "area_height": 1000,
+    "transmission_range": 200,
+    "num_scenarios": 3,
+    "simulation_time": 60,
+    "mobility_model": "random_waypoint",
+    "packet_rate": 3,
+    "protocols": [
+      "AODV",
+      "DSDV",
+      "DSR",
+      "OLSR"
+    ],
+    "enable_route_selection": false,
+    "source_node": null,
+    "destination_node": null
+  },
+  "test_results": [
+    {
+      "protocol": "AODV",
+      "scenario": 0,
+      "timestamp": "2025-10-12T19:07:26.471990",
+      "metrics": {
+        "packet_delivery_ratio": 1.0,
+        "average_delay": 1.0640000000000023,
+        "routing_overhead": 0.5,
+        "throughput": 1536.0,
+        "energy_consumption": 26.549999999999972,
+        "route_discovery_time": 0.0,
+        "hop_count": 1.0,
+        "packet_loss": 0.0
+      },
+      "route_info": {
+        "source_node": 11,
+        "destination_node": 13,
+        "fixed_route": false
+      },
+      "network_config": {
+        "num_nodes": 20,
+        "area_size": "1000x1000",
+        "transmission_range": 200,
+        "mobility_model": "random_waypoint"
+      }
+    },
+    {
+      "protocol": "AODV",
+      "scenario": 1,
+      "timestamp": "2025-10-12T19:07:53.576699",
+      "metrics": {
+        "packet_delivery_ratio": 0.0,
+        "average_delay": 0.0,
+        "routing_overhead": 0.7680412371134021,
+        "throughput": 0.0,
+        "energy_consumption": 57.80000000000018,
+        "route_discovery_time": 0.0,
+        "hop_count": 0.0,
+        "packet_loss": 1.0
+      },
+      "route_info": {
+        "source_node": 19,
+        "destination_node": 17,
+        "fixed_route": false
+      },
+      "network_config": {
+        "num_nodes": 20,
+        "area_size": "1000x1000",
+        "transmission_range": 200,
+        "mobility_model": "random_waypoint"
+      }
+    },
+    {
+      "protocol": "AODV",
+      "scenario": 2,
+      "timestamp": "2025-10-12T19:08:21.536983",
+      "metrics": {
+        "packet_delivery_ratio": 1.0,
+        "average_delay": 7.075599999999979,
+        "routing_overhead": 0.869281045751634,
+        "throughput": 1536.0,
+        "energy_consumption": 126.44999999999989,
+        "route_discovery_time": 0.0,
+        "hop_count": 6.522222222222222,
+        "packet_loss": 0.0
+      },
+      "route_info": {
+        "source_node": 1,
+        "destination_node": 3,
+        "fixed_route": false
+      },
+      "network_config": {
+        "num_nodes": 20,
+        "area_size": "1000x1000",
+        "transmission_range": 200,
+        "mobility_model": "random_waypoint"
+      }
+    },
+    {
+      "protocol": "DSDV",
+      "scenario": 0,
+      "timestamp": "2025-10-12T19:08:22.681781",
+      "metrics": {
+        "packet_delivery_ratio": 1.0,
+        "average_delay": 5.32,
+        "routing_overhead": 0.8333333333333334,
+        "throughput": 8.533333333333333,
+        "energy_consumption": 0.55,
+        "route_discovery_time": 0.0,
+        "hop_count": 4.0,
+        "packet_loss": 0.0
+      },
+      "route_info": {
+        "source_node": 4,
+        "destination_node": 6,
+        "fixed_route": false
+      },
+      "network_config": {
+        "num_nodes": 20,
+        "area_size": "1000x1000",
+        "transmission_range": 200,
+        "mobility_model": "random_waypoint"
+      }
+    },
+    {
+      "protocol": "DSDV",
+      "scenario": 1,
+      "timestamp": "2025-10-12T19:08:23.756420",
+      "metrics": {
+        "packet_delivery_ratio": 1.0,
+        "average_delay": 1.064,
+        "routing_overhead": 0.5,
+        "throughput": 8.533333333333333,
+        "energy_consumption": 0.15000000000000002,
+        "route_discovery_time": 0.0,
+        "hop_count": 1.0,
+        "packet_loss": 0.0
+      },
+      "route_info": {
+        "source_node": 6,
+        "destination_node": 1,
+        "fixed_route": false
+      },
+      "network_config": {
+        "num_nodes": 20,
+        "area_size": "1000x1000",
+        "transmission_range": 200,
+        "mobility_model": "random_waypoint"
+      }
+    },
+    {
+      "protocol": "DSDV",
+      "scenario": 2,
+      "timestamp": "2025-10-12T19:08:24.817288",
+      "metrics": {
+        "packet_delivery_ratio": 1.0,
+        "average_delay": 5.32,
+        "routing_overhead": 0.8333333333333334,
+        "throughput": 8.533333333333333,
+        "energy_consumption": 0.55,
+        "route_discovery_time": 0.0,
+        "hop_count": 5.0,
+        "packet_loss": 0.0
+      },
+      "route_info": {
+        "source_node": 20,
+        "destination_node": 1,
+        "fixed_route": false
+      },
+      "network_config": {
+        "num_nodes": 20,
+        "area_size": "1000x1000",
+        "transmission_range": 200,
+        "mobility_model": "random_waypoint"
+      }
+    },
+    {
+      "protocol": "DSR",
+      "scenario": 0,
+      "timestamp": "2025-10-12T19:08:52.551446",
+      "metrics": {
+        "packet_delivery_ratio": 1.0,
+        "average_delay": 2.1280000000000046,
+        "routing_overhead": 0.6666666666666666,
+        "throughput": 1536.0,
+        "energy_consumption": 44.24999999999996,
+        "route_discovery_time": 0.0,
+        "hop_count": 2.0,
+        "packet_loss": 0.0
+      },
+      "route_info": {
+        "source_node": 18,
+        "destination_node": 12,
+        "fixed_route": false
+      },
+      "network_config": {
+        "num_nodes": 20,
+        "area_size": "1000x1000",
+        "transmission_range": 200,
+        "mobility_model": "random_waypoint"
+      }
+    },
+    {
+      "protocol": "DSR",
+      "scenario": 1,
+      "timestamp": "2025-10-12T19:09:21.854041",
+      "metrics": {
+        "packet_delivery_ratio": 0.3388888888888889,
+        "average_delay": 9.732983606557394,
+        "routing_overhead": 0.9472140762463344,
+        "throughput": 520.5333333333333,
+        "energy_consumption": 326.05000000000103,
+        "route_discovery_time": 0.0,
+        "hop_count": 9.032786885245901,
+        "packet_loss": 0.6611111111111111
+      },
+      "route_info": {
+        "source_node": 10,
+        "destination_node": 8,
+        "fixed_route": false
+      },
+      "network_config": {
+        "num_nodes": 20,
+        "area_size": "1000x1000",
+        "transmission_range": 200,
+        "mobility_model": "random_waypoint"
+      }
+    },
+    {
+      "protocol": "DSR",
+      "scenario": 2,
+      "timestamp": "2025-10-12T19:09:48.441884",
+      "metrics": {
+        "packet_delivery_ratio": 0.9833333333333333,
+        "average_delay": 8.632225988700581,
+        "routing_overhead": 0.8918918918918919,
+        "throughput": 1510.4,
+        "energy_consumption": 154.79999999999984,
+        "route_discovery_time": 0.0,
+        "hop_count": 8.028248587570621,
+        "packet_loss": 0.01666666666666672
+      },
+      "route_info": {
+        "source_node": 3,
+        "destination_node": 5,
+        "fixed_route": false
+      },
+      "network_config": {
+        "num_nodes": 20,
+        "area_size": "1000x1000",
+        "transmission_range": 200,
+        "mobility_model": "random_waypoint"
+      }
+    },
+    {
+      "protocol": "OLSR",
+      "scenario": 0,
+      "timestamp": "2025-10-12T19:09:49.612364",
+      "metrics": {
+        "packet_delivery_ratio": 0.0,
+        "average_delay": 0.0,
+        "routing_overhead": 0.9814814814814815,
+        "throughput": 0.0,
+        "energy_consumption": 5.300000000000001,
+        "route_discovery_time": 0.0,
+        "hop_count": 0.0,
+        "packet_loss": 1.0
+      },
+      "route_info": {
+        "source_node": 4,
+        "destination_node": 16,
+        "fixed_route": false
+      },
+      "network_config": {
+        "num_nodes": 20,
+        "area_size": "1000x1000",
+        "transmission_range": 200,
+        "mobility_model": "random_waypoint"
+      }
+    },
+    {
+      "protocol": "OLSR",
+      "scenario": 1,
+      "timestamp": "2025-10-12T19:09:50.682139",
+      "metrics": {
+        "packet_delivery_ratio": 0.0,
+        "average_delay": 0.0,
+        "routing_overhead": 0.5,
+        "throughput": 0.0,
+        "energy_consumption": 0.1,
+        "route_discovery_time": 0.0,
+        "hop_count": 0.0,
+        "packet_loss": 1.0
+      },
+      "route_info": {
+        "source_node": 19,
+        "destination_node": 14,
+        "fixed_route": false
+      },
+      "network_config": {
+        "num_nodes": 20,
+        "area_size": "1000x1000",
+        "transmission_range": 200,
+        "mobility_model": "random_waypoint"
+      }
+    },
+    {
+      "protocol": "OLSR",
+      "scenario": 2,
+      "timestamp": "2025-10-12T19:09:51.754786",
+      "metrics": {
+        "packet_delivery_ratio": 0.0,
+        "average_delay": 0.0,
+        "routing_overhead": 0.5,
+        "throughput": 0.0,
+        "energy_consumption": 0.1,
+        "route_discovery_time": 0.0,
+        "hop_count": 0.0,
+        "packet_loss": 1.0
+      },
+      "route_info": {
+        "source_node": 10,
+        "destination_node": 14,
+        "fixed_route": false
+      },
+      "network_config": {
+        "num_nodes": 20,
+        "area_size": "1000x1000",
+        "transmission_range": 200,
+        "mobility_model": "random_waypoint"
+      }
+    }
+  ],
+  "test_completion_time": "2025-10-12T19:09:52.760914",
+  "total_tests": 12,
+  "protocols_tested": [
+    "AODV",
+    "DSDV",
+    "DSR",
+    "OLSR"
+  ],
+  "scenarios_per_protocol": 3
+}
