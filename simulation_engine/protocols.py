@@ -1,5 +1,4 @@
 # File: simulation_engine/protocols.py
-# CORRECTED PROTOCOL IMPLEMENTATIONS
 
 import simpy
 from collections import defaultdict, deque
