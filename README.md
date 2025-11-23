@@ -1,78 +1,106 @@
-# 🌐 MANET Protocol Auto-Tester
-**Advanced Mobile Ad-hoc Network Protocol Testing & Analysis Tool**
+# Advanced MANET Simulation
 
-The **MANET Protocol Auto-Tester** is a web-based simulation tool designed for students, researchers, and network enthusiasts to visualize and compare the performance of various Mobile Ad-hoc Network (MANET) routing protocols. It provides an intuitive interface to configure network scenarios, run automated tests, and analyze results through a comprehensive report.
+## Overview
+This project is a comprehensive Mobile Ad-hoc Network (MANET) simulation tool built using **Python** and **SimPy**. It provides a web-based interface for configuring, running, and visualizing MANET simulations. 
 
----
+**Note:** This project does **NOT** use ns-3. It features a custom-built simulation engine that models network nodes, mobility, and routing protocols purely in Python.
 
-## ✨ Key Features
-- **Interactive Visualization**: Real-time canvas displays the network topology, node movements, and active communication links.  
-- **Flexible Configuration**: Easily set up network parameters such as number of nodes, simulation area, transmission range, and node mobility models.  
-- **Automated Multi-Protocol Testing**: Select and automatically test multiple MANET protocols (AODV, DSDV, DSR, OLSR) under the same conditions for direct comparison.  
-- **Customizable Scenarios**: Run multiple test scenarios with varying random seeds or define specific source-destination pairs for targeted analysis.  
-- **Live Performance Metrics**: View key metrics like the best-performing protocol and packet delivery rate in real-time as the simulation progresses.  
-- **Detailed Reporting**: Generate a comprehensive final report that summarizes the performance of each protocol across all test scenarios, highlighting key metrics like:  
-  - 📦 Packet Delivery Ratio (PDR)  
-  - ⏱️ Average End-to-End Delay  
-  - 📊 Routing Overhead  
-- **Hybrid Architecture**:  
-  - **Python Backend (Flask + Socket.IO)** → Handles protocol simulation, metrics calculation, and data streaming.  
-  - **JavaScript Frontend (HTML5 + CSS3)** → Handles visualization, animations, and report display.  
+## Key Features
+- **Custom Simulation Engine**: Built on top of `simpy` for discrete-event simulation.
+- **Protocol Support**: Implements major MANET routing protocols:
+  - **AODV** (Ad hoc On-Demand Distance Vector)
+  - **DSDV** (Destination-Sequenced Distance-Vector)
+  - **DSR** (Dynamic Source Routing)
+  - **OLSR** (Optimized Link State Routing)
+- **Automated Protocol Tester**: Built-in framework to automatically run comprehensive tests across multiple random scenarios and rank protocols based on a composite performance score.
+- **Mobility Models**: Supports Random Waypoint and Random Walk mobility models.
+- **Real-time Visualization**: Web-based dashboard to view simulation progress and results.
+- **Comprehensive Metrics**: Tracks Packet Delivery Ratio (PDR), End-to-End Delay, Throughput, Routing Overhead, and Energy Consumption.
 
----
+## Project Structure
 
-## 🛠️ Technologies Used
-- **Frontend**  
-  - HTML5 → Interface structure  
-  - CSS3 → Styling and responsiveness  
-  - JavaScript (ES6+) → Visualization, animations, data updates  
+```
+Advanced-Manet-Simulation/
+├── app.py                  # Main Flask application entry point
+├── requirements.txt        # Python dependencies
+├── simulation_engine/      # Core simulation logic
+│   ├── simulator.py        # MANETSimulator class (SimPy environment, topology)
+│   ├── protocols.py        # Protocol implementations (AODV, DSDV, DSR, OLSR)
+│   ├── manet_models.py     # Node and Packet models
+│   ├── auto_protocol_tester.py # Orchestrator for automated testing
+│   └── config.py           # Configuration settings
+├── static/                 # Static assets (CSS, JS)
+├── templates/              # HTML templates
+└── data/                   # Simulation results and data storage
+```
 
-- **Backend**  
-  - Python 3.x  
-  - Flask (for web server & REST endpoints)  
-  - Flask-SocketIO (real-time communication with frontend)  
-  - Simulation Engine (custom Python logic for mobility models, routing protocols, metrics)   
+## How It Works
 
----
+### 1. Simulation Engine (`simulation_engine/`)
+The core of the project lies in the `simulation_engine` directory.
+- **`simulator.py`**: Initializes the `simpy.Environment`, creates nodes based on the specified area and density, and manages the simulation loop. It handles packet generation and collects global metrics.
+- **`manet_models.py`**: Defines the `Node` class, which represents a network node with properties like position, speed, energy, and transmission range. It also defines the `Packet` class. Nodes move according to the selected mobility model.
+- **`protocols.py`**: Contains the logic for routing protocols. Each protocol is a class that manages routing tables, route discovery (for reactive protocols like AODV/DSR), and periodic updates (for proactive protocols like DSDV/OLSR).
 
-## 🚀 How to Run
-No installation is needed. Simply download the project files and open the `index.html` file in your preferred web browser.
+### 2. Web Interface (`app.py`)
+The Flask application serves as the control center.
+- It provides APIs to start, stop, and monitor simulations.
+- It uses `Flask-SocketIO` to push real-time updates (progress, current test status) to the frontend.
+- Simulation runs in a separate thread to keep the web server responsive.
 
-1. Clone or download the repository.  
-2. Navigate to the project directory.  
-3. run python app.py 
+### 3. Simulation Flow
+1.  **Configuration**: User selects parameters (nodes, area, protocol, etc.) via the UI.
+2.  **Initialization**: `MANETSimulator` creates the network topology and initializes the selected protocol.
+3.  **Execution**:
+    - **Traffic Generation**: Source nodes generate packets destined for specific nodes.
+    - **Routing**: The protocol determines the path. For AODV/DSR, this involves Route Request (RREQ) and Route Reply (RREP) cycles. For DSDV/OLSR, it uses pre-calculated tables.
+    - **Mobility**: Nodes move within the simulation area, dynamically changing the network topology and connectivity.
+    - **Energy**: Nodes consume energy for transmission, reception, and movement.
+4.  **Metrics**: The simulator tracks successful deliveries, drops, delays, and overhead.
+5.  **Reporting**: Results are aggregated and displayed on the dashboard.
 
----
+## Installation & Usage
 
-## ⚙️ How to Use the Tester
+### Prerequisites
+- Python 3.8+
+- pip
 
-### 🔧 Network Configuration
-- **Number of Nodes**: Set the total number of mobile nodes in the network.  
-- **Area Width/Height**: Define the dimensions of the simulation area in meters.  
-- **Transmission Range**: Specify the maximum communication range for each node.  
+### Setup
+1.  Clone the repository or navigate to the project directory.
+2.  Create a virtual environment (optional but recommended):
+    ```bash
+    python -m venv venv
+    # Windows
+    venv\Scripts\activate
+    # Linux/Mac
+    source venv/bin/activate
+    ```
+3.  Install dependencies:
+    ```bash
+    pip install -r requirements.txt
+    ```
 
-### 🧪 Test Configuration
-- **Number of Test Scenarios**: Define how many times the simulation will run (with different random seeds) to average the results.  
-- **Simulation Time**: Set the duration for each individual scenario in seconds.  
-- **Mobility Model**: Choose how the nodes move (Random Waypoint or Static).  
-- **Packet Generation Rate**: Set the frequency of data packet creation.  
+### Running the Application
+1.  Start the Flask server:
+    ```bash
+    python app.py
+    ```
+2.  Open your web browser and go to:
+    ```
+    http://localhost:5000
+    ```
 
-### 🎯 Route Selection (Optional)
-- By default, the simulation uses random source and destination nodes for each run.  
-- Check **"Enable Source & Destination Selection"** to test a specific communication path.  
-- Select the desired nodes from the dropdowns.  
+## Configuration Parameters
+- **Number of Nodes**: Total nodes in the network.
+- **Area Size**: Width and height of the simulation field (in meters).
+- **Transmission Range**: Maximum distance a node can transmit data.
+- **Simulation Time**: Duration of the simulation (in seconds).
+- **Mobility Model**: Strategy for node movement (Random Waypoint, Random Walk).
+- **Protocols**: Select one or more protocols to test and compare.
 
-### 📡 Protocol Selection
-- Check the boxes for the routing protocols you wish to test and compare (e.g., AODV, DSDV, DSR, OLSR).  
-
-### ▶️ Start the Test
-1. Click the **🚀 Start Auto Test** button.  
-2. Observe node movements and network activity on the canvas.  
-3. Monitor the live progress and results in the stats panel.  
-
-### 📊 View the Report
-- Once the simulation is complete, a **"Simulation Complete!"** alert will appear.  
-- Click the **📊 View Report** button to open a detailed modal comparing the performance of all tested protocols.  
-
----
-
+## Dependencies
+- `Flask`, `Flask-SocketIO`: Web framework and real-time communication.
+- `simpy`: Discrete-event simulation framework.
+- `numpy`: Numerical operations for position and distance calculations.
+- `networkx`: Graph algorithms (used for some topology analysis).
+- `matplotlib`, `pandas`: Data visualization and analysis.

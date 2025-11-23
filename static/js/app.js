@@ -14,10 +14,10 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 function initializeCharts() {
-    charts.pdr = initChart("pdrChart", "line", "rgba(54, 162, 235, 1)", "PDR (%)");
-    charts.delay = initChart("delayChart", "line", "rgba(255, 99, 132, 1)", "Delay (ms)");
-    charts.throughput = initChart("throughputChart", "line", "rgba(75, 192, 192, 1)", "Throughput (kbps)");
-    charts.energy = initChart("energyChart", "line", "rgba(153, 102, 255, 1)", "Energy (J)");
+    charts.pdr = initChart("pdrChart", "line", "rgba(255, 159, 64, 1)", "PDR (%)"); // Orange
+    charts.delay = initChart("delayChart", "line", "rgba(255, 99, 132, 1)", "Delay (ms)"); // Red
+    charts.throughput = initChart("throughputChart", "line", "rgba(75, 192, 192, 1)", "Throughput (kbps)"); // Teal
+    charts.energy = initChart("energyChart", "line", "rgba(153, 102, 255, 1)", "Energy (J)"); // Purple
 }
 
 function initChart(canvasId, type, bgColor, yLabel) {
@@ -126,6 +126,11 @@ socket.on('simulation_progress', function(data) {
         if (latestResult.route_info) {
             currentRouteInfo.source = latestResult.route_info.source_node;
             currentRouteInfo.destination = latestResult.route_info.destination_node;
+            
+            // Update the UI visualization if we have nodes
+            if (typeof updateSourceDestinationUI === 'function') {
+                updateSourceDestinationUI(latestResult.route_info.source_node, latestResult.route_info.destination_node);
+            }
         }
     }
     // ✨ --- END OF NEW CODE --- ✨
@@ -226,7 +231,7 @@ function getSelectedProtocols() {
 
 
 function stopAutoTesting() {
-    fetch("/stop_auto_testing", {
+    fetch("/api/stop_simulation", {
         method: "POST",
         headers: { "Content-Type": "application/json" }
     })
@@ -234,6 +239,14 @@ function stopAutoTesting() {
     .then(data => {
         console.log("Stopping auto-testing...");
         updateStatus("Stopped", "running");
+        // Reset UI state
+        document.getElementById("btnStartAutoTest").disabled = false;
+        document.getElementById("btnStopAutoTest").disabled = true;
+        testingActive = false;
+    })
+    .catch(err => {
+        console.error("Error stopping simulation:", err);
+        alert("Error stopping simulation: " + err.message);
     });
 }
 

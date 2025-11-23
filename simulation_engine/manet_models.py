@@ -76,34 +76,52 @@ class Node:
             self.energy = 0
 
     def receive(self, packet):
-        yield self.simulator.env.timeout(0.001)
-
+        """Synchronous packet reception"""
+        if not self.simulator:
+            return False
+            
         if packet.dst_id == self.id:
+            # Packet reached destination
             packet.delivery_time = self.simulator.env.now
             self.simulator.metrics['packets_received'] += 1
-            self.simulator.interval_metrics['packets_received'] += 1
-            delay = packet.delivery_time - packet.creation_time
-            self.simulator.metrics['total_delay'] += delay
-            self.simulator.interval_metrics['total_delay'] += delay
-            return
+            
+            # Calculate delay including transmission delays
+            base_delay = packet.delivery_time - packet.creation_time
+            transmission_delay = getattr(packet, 'transmission_delay', 0)
+            total_delay = base_delay + transmission_delay
+            
+            self.simulator.metrics['total_delay'] += total_delay
+            self.simulator.metrics['hop_counts'].append(len(packet.hops))
+            self.consume_energy(0.05)  # Energy for reception
+            return True
 
+        # Check for infinite loops - if this node already processed this packet
+        if self.id in packet.hops:
+            # Loop detected, drop packet
+            self.simulator.metrics['packets_dropped'] += 1
+            return False
+
+        # Add this node to the hop list to prevent loops
+        packet.hops.append(self.id)
+        packet.last_hop = self.id
+
+        # Try to route packet
         routing = self.simulator.routing
-        next_hop = routing.get_next_hop(self.id, packet.dst_id)
-        if next_hop is not None:
-            packet.hops.append(self.id)
-            packet.last_hop = self.id
-            self.simulator.env.process(next_hop.receive(packet))
-        else:
-            routing.packet_queue[self.id].append(packet)
-
-            if not self.routing_handler_running:
-                self.routing_handler_running = True
-
-                def _handler_wrapper():
-                    yield from routing._handle_packets(self)
-                    self.routing_handler_running = False
-
-                self.simulator.env.process(_handler_wrapper())
+        if routing and hasattr(routing, '_route_packet_sync'):
+            # Use synchronous routing
+            routed = routing._route_packet_sync(self, packet)
+            if routed:
+                return True
+        
+        # If no route found, try route discovery
+        if routing and hasattr(routing, '_initiate_route_discovery_sync'):
+            routed = routing._initiate_route_discovery_sync(self, packet)
+            if routed:
+                return True
+        
+        # Packet dropped
+        self.simulator.metrics['packets_dropped'] += 1
+        return False
 
 
 class Packet:

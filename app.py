@@ -1,3 +1,4 @@
+# app.py
 from flask import Flask, render_template, request, jsonify
 from flask_socketio import SocketIO
 import json
@@ -109,6 +110,11 @@ class EnhancedAutoProtocolTester(AutoProtocolTester):
                 time.sleep(1)
             
             print(f"Completed all scenarios for {protocol}")
+        
+        # Check if simulation was stopped
+        if stop_simulation_flag.is_set():
+            print("Simulation stopped by user")
+            return self.results
         
         # Final progress update
         if progress_callback:
@@ -384,21 +390,28 @@ def stop_simulation():
     global current_simulation
     
     try:
+        print("Stopping simulation...")
         stop_simulation_flag.set()
         start_simulation_flag.clear()
         
-        if current_simulation:
+        if current_simulation and current_simulation.is_alive():
             simulation_progress['current_test'] = 'Stopping...'
-            # Wait for thread to finish
-            current_simulation.join(timeout=5)
+            print("Waiting for simulation thread to finish...")
+            # Wait for thread to finish with longer timeout
+            current_simulation.join(timeout=10)
+            if current_simulation.is_alive():
+                print("Warning: Simulation thread did not stop gracefully")
             current_simulation = None
         
         simulation_progress['completed'] = True
         simulation_progress['current_test'] = 'Stopped'
+        simulation_progress['progress'] = 0
         
+        print("Simulation stopped successfully")
         return jsonify({'status': 'stopped', 'message': 'Simulation stopped'})
         
     except Exception as e:
+        print(f"Error stopping simulation: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/results', methods=['GET'])

@@ -18,10 +18,15 @@ def set_stop_simulation(value: bool):
         start_simulation_flag.clear()
     else:
         stop_simulation_flag.clear()
+        start_simulation_flag.set()
 
 def get_stop_simulation() -> bool:
     """Get the current stop simulation status"""
     return stop_simulation_flag.is_set()
+
+def is_simulation_stopped():
+    """Function for backward compatibility"""
+    return get_stop_simulation()
 
 def get_stop():
     """Alias for get_stop_simulation for backward compatibility"""
@@ -33,7 +38,7 @@ DEFAULT_SIMULATION_CONFIG = {
     'area_width': 1000,
     'area_height': 1000,
     'transmission_range': 250,
-    'simulation_time': 100,
+    'simulation_time': 0,
     'mobility_model': 'random_waypoint',
     'packet_rate': 1.0,
     'protocols': ['AODV', 'DSDV', 'DSR', 'OLSR'],
